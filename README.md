@@ -98,7 +98,31 @@ src/main/
 
 ---
 
-## 🐛 TROUBLESHOOTING
+## 🔧 TROUBLESHOOTING
+
+### Erro: NoClassDefFoundError: org/springframework/boot/SpringApplication
+
+**Solução:**
+
+1. **Feche completamente o IntelliJ IDEA**
+
+2. **Execute o script:**
+   ```powershell
+   RESOLVER_CLASSPATH.bat
+   ```
+
+3. **Reabra o IntelliJ IDEA**
+   - IntelliJ vai reindexar o projeto automaticamente
+
+4. **Aguarde a reindexação completar**
+   - Você verá "Indexing..." na barra inferior
+
+5. **Clique em Run:**
+   ```
+   Run > Run HistlimgoApplication (Shift+F10)
+   ```
+
+---
 
 ### Porta já em uso
 Se porta 8082 estiver em uso, mude em `application.properties`:
@@ -109,9 +133,9 @@ server.port=8083
 ### Projeto não compila
 1. Clique em `File > Invalidate Caches`
 2. Reinicie o IntelliJ
-3. Tente novamente
+3. Execute `Build > Build Project` (Ctrl+F9)
 
-### Erro de banco de dados
+---
 O H2 está em memória, portanto:
 - Dados são perdidos ao reiniciar
 - Console H2 em http://localhost:8082/h2-console
