@@ -29,16 +29,7 @@ mvn clean spring-boot:run
 
 ---
 
-## ✅ STATUS DO PROJETO
 
-**Compilação:** ✅ SUCESSO
-**Spring Boot:** ✅ INICIANDO
-**Banco de Dados:** ✅ H2 CONECTADO
-**API:** ✅ 8 MAPPINGS CARREGADOS
-**Swagger:** ✅ DISPONÍVEL
-**Status Geral:** ✅ **PRONTO PARA USAR**
-
----
 
 ## 📦 TECNOLOGIAS
 
