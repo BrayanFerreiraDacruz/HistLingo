@@ -1,26 +1,26 @@
 CREATE TABLE IF NOT EXISTS modules (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(255) NOT NULL,
     sort_order INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS lessons (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     module_id BIGINT REFERENCES modules(id),
     xp_reward INT NOT NULL,
     type VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS challenges (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     lesson_id BIGINT REFERENCES lessons(id),
     content TEXT NOT NULL,
     correct_answer TEXT NOT NULL,
-    difficulty_weight DOUBLE PRECISION NOT NULL
+    difficulty_weight DOUBLE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS users (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS user_reviews (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT REFERENCES users(id),
     challenge_id BIGINT REFERENCES challenges(id),
     ease_factor FLOAT NOT NULL,

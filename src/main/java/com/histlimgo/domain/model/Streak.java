@@ -1,10 +1,14 @@
 package com.histlimgo.domain.model;
 
+import org.springframework.data.relational.core.mapping.Column;
 import java.time.LocalDateTime;
 
 public record Streak(
+    @Column("current_count")
     int currentCount,
+    @Column("last_activity_date")
     LocalDateTime lastActivityDate,
+    @Column("recovery_freeze_count")
     int recoveryFreezeCount
 ) {
     public Streak increment() {

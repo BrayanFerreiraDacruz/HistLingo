@@ -11,15 +11,19 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 @Service
-@RequiredArgsConstructor
+
 public class GamificationService {
     private final UserRepository userRepository;
 
+    public GamificationService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
     public int calculateXPGain(int baseXP, double difficultyWeight, int currentStreak) {
-        // XP_{ganho} = (BaseXP \times MultiplicadorDificuldade) + BonusStreak.
-        int bonusStreak = currentStreak / 5; // Example: 1 XP bonus for every 5 days of streak
+        int bonusStreak = currentStreak / 5;
         return (int) (baseXP * difficultyWeight) + bonusStreak;
     }
+
 
     @Transactional
     public User updateStreak(Long userId) {
@@ -28,7 +32,7 @@ public class GamificationService {
 
         LocalDateTime now = LocalDateTime.now();
         Streak currentStreak = user.streak();
-        
+
         if (currentStreak.lastActivityDate() == null) {
             return saveWithNewStreak(user, currentStreak.reset());
         }
@@ -36,17 +40,14 @@ public class GamificationService {
         long hoursSinceLastActivity = ChronoUnit.HOURS.between(currentStreak.lastActivityDate(), now);
 
         if (hoursSinceLastActivity > 48) {
-            // Se now() - lastActivity > 48h -> resetStreak().
             if (currentStreak.recoveryFreezeCount() > 0) {
                 return saveWithNewStreak(user, currentStreak.useFreeze());
             }
             return saveWithNewStreak(user, currentStreak.reset());
         } else if (hoursSinceLastActivity > 24) {
-            // Se now() - lastActivity > 24h -> incrementStreak().
             return saveWithNewStreak(user, currentStreak.increment());
         }
 
-        // If less than 24h, just update the last activity date without incrementing
         return saveWithNewStreak(user, new Streak(currentStreak.currentCount(), now, currentStreak.recoveryFreezeCount()));
     }
 
@@ -63,3 +64,4 @@ public class GamificationService {
         return userRepository.save(updatedUser);
     }
 }
+

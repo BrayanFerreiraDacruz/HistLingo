@@ -4,16 +4,19 @@ import com.histlimgo.api.v1.dto.UserDTO;
 import com.histlimgo.application.service.GamificationService;
 import com.histlimgo.domain.model.User;
 import com.histlimgo.domain.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@RequiredArgsConstructor
 public class UserController {
     private final UserRepository userRepository;
     private final GamificationService gamificationService;
+
+    public UserController(UserRepository userRepository, GamificationService gamificationService) {
+        this.userRepository = userRepository;
+        this.gamificationService = gamificationService;
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUser(@PathVariable Long id) {
