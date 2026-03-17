@@ -20,4 +20,9 @@ public class FrontendController {
     public String redirect2() {
         return "forward:/index.html";
     }
+
+    @GetMapping(value = "/{path:[^\\.]*}/{subpath:[^\\.]*}/{subsubpath:[^\\.]*}")
+    public String redirect3() {
+        return "forward:/index.html";
+    }
 }
