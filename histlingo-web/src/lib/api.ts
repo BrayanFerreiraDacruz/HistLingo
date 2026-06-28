@@ -82,10 +82,10 @@ export const users = {
   getProgress: () => request<string[]>('/users/progress'),
   updateProfile: (dto: { username?: string; avatarEmoji?: string }) =>
     request<User>('/users/profile', { method: 'PATCH', body: JSON.stringify(dto) }),
-  completeLesson: (userId: string, lessonId: string) =>
+  completeLesson: (userId: string, lessonId: string, wrongCount = 0) =>
     request<{ xpGained: number; firstTime: boolean }>(`/users/${userId}/complete-lesson`, {
       method: 'POST',
-      body: JSON.stringify({ lessonId }),
+      body: JSON.stringify({ lessonId, wrongCount }),
     }),
   submitAnswer: (userId: string, challengeId: string, quality: number) =>
     request<{ xpGain: number; nextReviewDate: string }>(`/users/${userId}/answer`, {

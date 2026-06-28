@@ -23,8 +23,8 @@ export class UsersController {
   }
 
   @Post(':id/complete-lesson')
-  completeLesson(@Param('id') userId: string, @Body() body: { lessonId: string }) {
-    return this.usersService.completeLesson(userId, body.lessonId);
+  completeLesson(@Param('id') userId: string, @Body() body: { lessonId: string; wrongCount?: number }) {
+    return this.usersService.completeLesson(userId, body.lessonId, body.wrongCount ?? 0);
   }
 
   @Post(':id/streak/update')

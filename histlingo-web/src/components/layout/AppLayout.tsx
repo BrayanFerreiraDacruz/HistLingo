@@ -2,29 +2,47 @@ import { HeaderStats } from "./HeaderStats"
 import { Sidebar } from "./Sidebar"
 import { RightPanel } from "./RightPanel"
 import { ReactNode } from "react"
+import { useLocation } from "wouter"
+
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'Jornada',
+  '/leaderboard': 'Ligas',
+  '/profile': 'Perfil',
+  '/wiki': 'Wiki',
+}
 
 export function AppLayout({ children }: { children: ReactNode }) {
+  const [location] = useLocation()
+  const title = PAGE_TITLES[location] || 'HistLingo'
+
   return (
     <div className="flex min-h-screen bg-(--color-background)">
-      {/* Left sidebar — desktop */}
+      {/* Left sidebar — lg+ */}
       <Sidebar />
 
-      {/* Center content */}
-      <main className="flex-1 flex flex-col min-h-screen lg:max-w-[680px] xl:max-w-[720px] w-full mx-auto">
-        {/* Mobile top bar */}
-        <header className="sticky top-0 z-40 lg:hidden bg-(--color-background)/95 backdrop-blur-md border-b-2 border-(--color-border) flex items-center justify-between px-4 h-14 shrink-0">
-          <span className="text-xl font-black text-(--color-primary) tracking-tighter select-none">HistLingo</span>
+      {/* Center column */}
+      <div className="flex flex-1 flex-col min-w-0">
+
+        {/* Top header — always visible on all screen sizes */}
+        <header className="sticky top-0 z-40 bg-(--color-background)/95 backdrop-blur-md border-b-2 border-(--color-border) flex items-center justify-between px-4 lg:px-8 h-14 shrink-0">
+          {/* Mobile: app logo. Desktop: page title (sidebar already has the logo) */}
+          <span className="text-xl font-black text-(--color-primary) tracking-tighter select-none lg:hidden">
+            HistLingo
+          </span>
+          <h1 className="hidden lg:block text-xl font-black text-white tracking-tight">
+            {title}
+          </h1>
           <HeaderStats />
         </header>
 
-        {/* Page content */}
-        <div className="flex-1 px-4 pt-5 pb-24 lg:pb-8 lg:px-8 overflow-y-auto no-scrollbar">
+        {/* Scrollable page content */}
+        <div className="flex-1 px-4 lg:px-10 pt-5 pb-24 lg:pb-10 overflow-y-auto no-scrollbar">
           {children}
         </div>
-      </main>
+      </div>
 
-      {/* Right panel — desktop only */}
-      <aside className="hidden xl:flex w-[320px] shrink-0 sticky top-0 h-screen overflow-y-auto no-scrollbar border-l-2 border-(--color-border)">
+      {/* Right panel — xl+ */}
+      <aside className="hidden xl:flex w-[300px] 2xl:w-[320px] shrink-0 sticky top-0 h-screen overflow-y-auto no-scrollbar border-l-2 border-(--color-border)">
         <RightPanel />
       </aside>
     </div>

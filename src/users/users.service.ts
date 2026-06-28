@@ -40,7 +40,7 @@ export class UsersService {
   async getLeaderboard() {
     const users = await this.prisma.user.findMany({
       select: { id: true, username: true, xpTotal: true, level: true, streakCount: true, avatarEmoji: true },
-      orderBy: { xpTotal: 'desc' },
+      orderBy: [{ xpTotal: 'desc' }, { level: 'desc' }, { createdAt: 'asc' }],
       take: 20,
     });
     return users.map((u, i) => ({ ...u, rank: i + 1, league: this.getLeague(u.xpTotal) }));
@@ -54,7 +54,7 @@ export class UsersService {
     return progress.map(p => p.lessonId);
   }
 
-  async completeLesson(userId: string, lessonId: string) {
+  async completeLesson(userId: string, lessonId: string, wrongCount: number = 0) {
     const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId } });
     if (!lesson) throw new NotFoundException('Lição não encontrada.');
 
@@ -68,11 +68,13 @@ export class UsersService {
       create: { userId, lessonId, completed: true },
     });
 
-    // Only grant XP on first completion
+    // Only grant XP on first completion; reduce by 15% per wrong answer (min 50%)
     if (!already?.completed) {
-      await this.gamification.addXP(userId, lesson.xpReward);
+      const multiplier = Math.max(0.5, 1 - wrongCount * 0.15);
+      const xpGranted = Math.round(lesson.xpReward * multiplier);
+      await this.gamification.addXP(userId, xpGranted);
       await this.gamification.updateStreak(userId);
-      return { xpGained: lesson.xpReward, firstTime: true };
+      return { xpGained: xpGranted, firstTime: true };
     }
     return { xpGained: 0, firstTime: false };
   }
