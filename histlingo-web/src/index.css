@@ -2,19 +2,19 @@
 
 @theme {
   --font-sans: "Nunito", "Segoe UI", system-ui, sans-serif;
-  
+
   /* Neo-Brasil Modern Dark Palette */
   --color-background: #0A1118;
   --color-foreground: #F8F9FA;
-  
+
   --color-primary: #00A651; /* Vibrant Flag Green */
   --color-primary-dark: #00823F;
   --color-primary-foreground: #FFFFFF;
-  
+
   --color-secondary: #FFD700; /* Vibrant Gold */
   --color-secondary-dark: #D4B200;
   --color-secondary-foreground: #1A1A1A;
-  
+
   --color-accent: #003566; /* Deep Blue */
   --color-accent-dark: #002244;
   --color-accent-foreground: #FFFFFF;
@@ -25,7 +25,7 @@
 
   --color-card: #141E28;
   --color-card-foreground: #F8F9FA;
-  
+
   --color-border: #1F2F3F;
   --color-input: #1F2F3F;
 
@@ -33,9 +33,6 @@
   --radius-2xl: 1.5rem;
   --radius-3xl: 2rem;
   --radius-full: 9999px;
-  
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
 @layer base {
@@ -52,21 +49,90 @@
   }
 }
 
-/* Custom Duolingo-style classes tailored for Dark Mode Neo-Brasil */
+/* Custom Duolingo-style shadow utilities */
 @layer utilities {
-  .shadow-neo-primary {
+  .shadow-neo-primary { box-shadow: 0 4px 0 0 var(--color-primary-dark); }
+  .shadow-neo-secondary { box-shadow: 0 4px 0 0 var(--color-secondary-dark); }
+  .shadow-neo-accent { box-shadow: 0 4px 0 0 var(--color-accent-dark); }
+  .shadow-neo-destructive { box-shadow: 0 4px 0 0 var(--color-destructive-dark); }
+  .shadow-neo-card { box-shadow: 0 6px 0 0 rgba(0, 0, 0, 0.5); }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+}
+
+/* Button system */
+@layer components {
+  .btn-base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    border-width: 2px;
+    border-style: solid;
+    transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-base:active:not(:disabled) { transform: translateY(2px); box-shadow: none !important; }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary-dark);
     box-shadow: 0 4px 0 0 var(--color-primary-dark);
   }
-  .shadow-neo-secondary {
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+
+  .btn-secondary {
+    background-color: var(--color-secondary);
+    color: #1a1a1a;
+    border-color: var(--color-secondary-dark);
     box-shadow: 0 4px 0 0 var(--color-secondary-dark);
   }
-  .shadow-neo-accent {
-    box-shadow: 0 4px 0 0 var(--color-accent-dark);
+  .btn-secondary:hover:not(:disabled) { filter: brightness(1.05); }
+
+  .btn-outline {
+    background-color: transparent;
+    color: var(--color-foreground);
+    border-color: var(--color-border);
+    box-shadow: 0 4px 0 0 rgba(0,0,0,0.4);
   }
-  .shadow-neo-destructive {
+  .btn-outline:hover:not(:disabled) { background-color: rgba(255,255,255,0.05); }
+
+  .btn-danger {
+    background-color: var(--color-destructive);
+    color: #fff;
+    border-color: var(--color-destructive-dark);
     box-shadow: 0 4px 0 0 var(--color-destructive-dark);
   }
-  .shadow-neo-card {
-    box-shadow: 0 6px 0 0 rgba(0, 0, 0, 0.5);
+  .btn-danger:hover:not(:disabled) { filter: brightness(1.1); }
+
+  .btn-disabled {
+    background-color: var(--color-input);
+    color: #4b5563;
+    border-color: var(--color-border);
+    box-shadow: 0 4px 0 0 rgba(0,0,0,0.3);
+    cursor: not-allowed;
   }
+
+  .node-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 9999px;
+    border-width: 4px;
+    border-style: solid;
+    transition: filter 0.15s, transform 0.1s;
+    cursor: pointer;
+  }
+  .node-btn:hover { filter: brightness(1.1); }
 }

@@ -1,11 +1,22 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, AlertCircle, CheckCircle } from "lucide-react"
+import { X, AlertCircle, CheckCircle, ChevronRight } from "lucide-react"
 import { useAuth } from "../lib/AuthContext"
 import { auth } from "../lib/api"
 import { useSearch } from "wouter"
 
-type Screen = 'landing' | 'form' | 'forgot' | 'reset'
+type Screen = 'landing' | 'register' | 'login' | 'forgot' | 'reset'
+
+const FLOATING_ICONS = [
+  { emoji: '🏹', x: '8%',  y: '12%', delay: 0,   dur: 5.0 },
+  { emoji: '⚔️', x: '85%', y: '18%', delay: 1.0, dur: 6.0 },
+  { emoji: '👑', x: '78%', y: '72%', delay: 2.0, dur: 4.5 },
+  { emoji: '⛵', x: '12%', y: '78%', delay: 0.5, dur: 5.5 },
+  { emoji: '📜', x: '48%', y: '6%',  delay: 1.5, dur: 4.0 },
+  { emoji: '🏛️', x: '92%', y: '46%', delay: 0.8, dur: 6.5 },
+]
+
+const inputCls = "w-full bg-[#0D1620] border-2 border-[#1A2633] px-5 py-4 rounded-2xl text-base font-bold text-white outline-none focus:border-(--color-primary) transition-colors placeholder:text-gray-600 shadow-inner"
 
 export function Auth() {
   const { login, register } = useAuth()
@@ -13,125 +24,181 @@ export function Auth() {
   const resetToken = new URLSearchParams(search).get('token')
 
   const [screen, setScreen] = useState<Screen>(resetToken ? 'reset' : 'landing')
-  const [isLogin, setIsLogin] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const handleAuthSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+  const reset = () => { setError(null); setSuccess(null) }
+
+  const handleAuth = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); reset(); setLoading(true)
     const form = e.currentTarget
     const email = (form.elements.namedItem('email') as HTMLInputElement).value
     const password = (form.elements.namedItem('password') as HTMLInputElement).value
     try {
-      if (isLogin) {
+      if (screen === 'login') {
         await login(email, password)
       } else {
         const username = (form.elements.namedItem('username') as HTMLInputElement).value
         await register(username, email, password)
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido.')
+    } catch (err: any) {
+      setError(err.message || 'Erro desconhecido.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleForgot = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-    const form = e.currentTarget
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value
+    e.preventDefault(); reset(); setLoading(true)
+    const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value
     try {
       const res = await auth.forgotPassword(email)
       setSuccess(res.message)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao enviar.')
+    } catch (err: any) {
+      setError(err.message || 'Erro ao enviar.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleReset = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault(); reset(); setLoading(true)
     const form = e.currentTarget
     const password = (form.elements.namedItem('password') as HTMLInputElement).value
     const confirm = (form.elements.namedItem('confirm') as HTMLInputElement).value
-    if (password !== confirm) {
-      setError('As senhas não coincidem.')
-      setLoading(false)
-      return
-    }
+    if (password !== confirm) { setError('As senhas não coincidem.'); setLoading(false); return }
     try {
       const res = await auth.resetPassword(resetToken!, password)
       setSuccess(res.message)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao redefinir.')
+    } catch (err: any) {
+      setError(err.message || 'Erro ao redefinir.')
     } finally {
       setLoading(false)
     }
   }
 
-  const inputClass = "w-full bg-[#1A2633] border-2 border-[#2B3B4C] px-5 py-4 rounded-2xl text-lg font-bold text-white outline-none focus:border-(--color-primary) transition-colors placeholder:text-gray-500 shadow-inner"
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A1118] overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-[#060C12] overflow-hidden flex items-center justify-center">
+
+      {/* Floating background icons — landing only */}
+      {screen === 'landing' && FLOATING_ICONS.map((item, i) => (
+        <motion.div key={i}
+          animate={{ y: [0, -18, 0], rotate: [0, 4, -4, 0] }}
+          transition={{ duration: item.dur, repeat: Infinity, delay: item.delay, ease: "easeInOut" }}
+          className="absolute text-5xl opacity-[0.07] pointer-events-none select-none"
+          style={{ left: item.x, top: item.y }}>
+          {item.emoji}
+        </motion.div>
+      ))}
+
       <AnimatePresence mode="wait">
 
-        {/* Landing Screen */}
+        {/* ── LANDING ── */}
         {screen === 'landing' && (
-          <motion.div key="landing" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, y: -40 }} transition={{ duration: 0.4 }}
-            className="flex flex-col items-center justify-center text-center p-6 w-full max-w-md relative z-10">
-            <motion.div animate={{ y: [0, -15, 0] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              className="text-[9rem] mb-6 leading-none select-none drop-shadow-2xl">🏹</motion.div>
-            <h1 className="text-4xl font-black text-white mb-10 leading-tight drop-shadow-md">
-              A história do Brasil.<br /><span className="text-(--color-primary)">Como um jogo.</span>
+          <motion.div key="landing"
+            initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.03 }}
+            transition={{ duration: 0.4 }}
+            className="flex flex-col items-center text-center px-6 w-full max-w-xs sm:max-w-sm relative z-10">
+
+            <motion.div
+              animate={{ y: [0, -14, 0] }}
+              transition={{ repeat: Infinity, duration: 4.2, ease: "easeInOut" }}
+              className="text-[7rem] sm:text-[8rem] mb-3 leading-none select-none drop-shadow-2xl">
+              🏹
+            </motion.div>
+
+            <h1 className="font-black text-white leading-none tracking-tighter mb-1">
+              <span className="text-5xl sm:text-6xl">Hist</span>
+              <span className="text-5xl sm:text-6xl text-(--color-primary)">Lingo</span>
             </h1>
-            <div className="flex flex-col gap-5 w-full px-2">
-              <button className="btn-primary w-full" onClick={() => { setIsLogin(false); setScreen('form') }}>COMEÇAR JORNADA</button>
-              <button className="btn-outline w-full" onClick={() => { setIsLogin(true); setScreen('form') }}>JÁ TENHO UMA CONTA</button>
+            <p className="text-gray-400 font-bold text-base sm:text-lg mt-2 mb-1">A história do Brasil.</p>
+            <p className="text-(--color-secondary) font-black text-xl sm:text-2xl mb-8">Jogada a sério.</p>
+
+            {/* Feature chips */}
+            <div className="flex gap-2 flex-wrap justify-center mb-8">
+              {['5 Módulos', '15 Lições', 'Ranking Global', 'Gratuito'].map(chip => (
+                <span key={chip} className="bg-white/5 border border-white/10 text-gray-400 text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-wide">
+                  {chip}
+                </span>
+              ))}
             </div>
+
+            <div className="flex flex-col gap-3 w-full">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                className="btn-base btn-secondary w-full py-5 text-base sm:text-lg flex items-center justify-center gap-2"
+                onClick={() => { reset(); setScreen('register') }}>
+                COMEÇAR GRÁTIS
+                <ChevronRight size={20} strokeWidth={3} />
+              </motion.button>
+              <button
+                className="btn-base btn-outline w-full py-4 text-sm"
+                onClick={() => { reset(); setScreen('login') }}>
+                JÁ TENHO UMA CONTA
+              </button>
+            </div>
+
+            <p className="text-gray-700 text-xs font-bold mt-8 uppercase tracking-widest">
+              TCC · IFRS Farroupilha · 2026
+            </p>
           </motion.div>
         )}
 
-        {/* Auth Form */}
-        {screen === 'form' && (
-          <motion.div key="form" initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="absolute inset-0 bg-(--color-background) z-50 flex flex-col items-center pt-24 px-6 sm:relative sm:inset-auto sm:max-w-md sm:h-auto sm:border-2 sm:border-(--color-border) sm:rounded-[2rem] sm:shadow-[0_10px_40px_rgba(0,0,0,0.5)] sm:p-10 sm:bg-(--color-card)">
-            <button className="absolute top-6 left-6 p-3 rounded-full hover:bg-white/5" onClick={() => { setScreen('landing'); setError(null) }}>
-              <X size={28} className="text-gray-400" strokeWidth={3} />
+        {/* ── REGISTER / LOGIN ── */}
+        {(screen === 'register' || screen === 'login') && (
+          <motion.div key={screen}
+            initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
+            transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            className="w-full max-w-sm mx-auto px-5 relative">
+
+            <button onClick={() => { setScreen('landing'); reset() }}
+              className="absolute top-0 left-3 p-2 rounded-full hover:bg-white/5 transition-colors">
+              <X size={26} className="text-gray-400" strokeWidth={3} />
             </button>
-            <h2 className="text-3xl font-black text-white mb-8 w-full text-center tracking-tight">
-              {isLogin ? 'Bem-vindo de volta' : 'Crie seu perfil'}
-            </h2>
-            <form onSubmit={handleAuthSubmit} className="flex flex-col gap-5 w-full">
-              {!isLogin && <input name="username" type="text" placeholder="Nome de explorador" required minLength={3} maxLength={30} className={inputClass} />}
-              <input name="email" type="email" placeholder="Email" required className={inputClass} />
-              <input name="password" type="password" placeholder="Senha" required minLength={6} className={inputClass} />
-              {error && <div className="flex items-center gap-3 bg-red-900/30 border-2 border-red-500/50 rounded-2xl px-4 py-3">
-                <AlertCircle size={20} className="text-red-400 shrink-0" />
-                <p className="text-red-300 font-bold text-sm">{error}</p>
-              </div>}
-              <button type="submit" disabled={loading} className="btn-secondary w-full mt-4 disabled:opacity-50">
-                {loading ? 'AGUARDE...' : (isLogin ? 'ENTRAR' : 'CRIAR CONTA')}
+
+            <div className="mt-12 mb-7 text-center">
+              <h2 className="text-3xl font-black text-white mb-1">
+                {screen === 'login' ? 'Bem-vindo de volta!' : 'Crie seu perfil'}
+              </h2>
+              <p className="text-gray-500 text-sm font-bold">
+                {screen === 'login' ? 'Entre para continuar sua jornada' : 'Junte-se à comunidade HistLingo'}
+              </p>
+            </div>
+
+            <form onSubmit={handleAuth} className="flex flex-col gap-4">
+              {screen === 'register' && (
+                <input name="username" type="text" placeholder="Nome de explorador" required minLength={3} maxLength={30} className={inputCls} autoComplete="username" />
+              )}
+              <input name="email" type="email" placeholder="Email" required className={inputCls} autoComplete="email" />
+              <input name="password" type="password" placeholder="Senha" required minLength={6} className={inputCls} autoComplete={screen === 'login' ? 'current-password' : 'new-password'} />
+
+              {error && (
+                <div className="flex items-start gap-3 bg-red-950/80 border border-red-500/30 rounded-2xl px-4 py-3">
+                  <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+                  <p className="text-red-300 font-bold text-sm">{error}</p>
+                </div>
+              )}
+
+              <button type="submit" disabled={loading}
+                className="btn-base btn-secondary w-full py-5 text-base mt-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                {loading ? 'AGUARDE...' : screen === 'login' ? 'ENTRAR' : 'CRIAR CONTA'}
               </button>
             </form>
-            <div className="mt-6 text-center text-gray-500 font-bold flex flex-col gap-3">
-              <p className="flex flex-col items-center gap-1">
-                {isLogin ? 'Ainda não tem conta?' : 'Já tem uma conta?'}
-                <button type="button" className="text-(--color-secondary) uppercase font-black tracking-widest hover:brightness-110"
-                  onClick={() => { setIsLogin(!isLogin); setError(null) }}>
-                  {isLogin ? 'CRIAR PERFIL' : 'ENTRAR'}
+
+            <div className="mt-6 flex flex-col items-center gap-3 text-sm">
+              <p className="text-gray-500 font-bold">
+                {screen === 'login' ? 'Ainda não tem conta?' : 'Já tem uma conta?'}{' '}
+                <button type="button"
+                  onClick={() => { setScreen(screen === 'login' ? 'register' : 'login'); reset() }}
+                  className="text-(--color-secondary) font-black uppercase tracking-wide hover:brightness-110">
+                  {screen === 'login' ? 'Criar perfil' : 'Entrar'}
                 </button>
               </p>
-              {isLogin && (
-                <button type="button" className="text-(--color-primary) text-sm font-bold hover:underline"
-                  onClick={() => { setScreen('forgot'); setError(null) }}>
+              {screen === 'login' && (
+                <button type="button"
+                  onClick={() => { setScreen('forgot'); reset() }}
+                  className="text-(--color-primary) font-bold hover:underline">
                   Esqueci minha senha
                 </button>
               )}
@@ -139,60 +206,58 @@ export function Auth() {
           </motion.div>
         )}
 
-        {/* Forgot Password */}
+        {/* ── FORGOT PASSWORD ── */}
         {screen === 'forgot' && (
-          <motion.div key="forgot" initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", damping: 25 }}
-            className="absolute inset-0 bg-(--color-background) z-50 flex flex-col items-center pt-24 px-6 sm:relative sm:inset-auto sm:max-w-md sm:border-2 sm:border-(--color-border) sm:rounded-[2rem] sm:p-10 sm:bg-(--color-card)">
-            <button className="absolute top-6 left-6 p-3 rounded-full hover:bg-white/5" onClick={() => { setScreen('form'); setError(null); setSuccess(null) }}>
-              <X size={28} className="text-gray-400" strokeWidth={3} />
+          <motion.div key="forgot"
+            initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", damping: 28 }}
+            className="w-full max-w-sm mx-auto px-5 relative">
+            <button onClick={() => { setScreen('login'); reset() }} className="absolute top-0 left-3 p-2 rounded-full hover:bg-white/5">
+              <X size={26} className="text-gray-400" strokeWidth={3} />
             </button>
-            <div className="text-5xl mb-6">🔑</div>
-            <h2 className="text-3xl font-black text-white mb-2 text-center">Recuperar senha</h2>
-            <p className="text-gray-400 font-bold text-sm text-center mb-8">Digite seu email e enviaremos as instruções.</p>
+            <div className="text-center mt-12 mb-7">
+              <div className="text-5xl mb-4">🔑</div>
+              <h2 className="text-3xl font-black text-white mb-2">Recuperar senha</h2>
+              <p className="text-gray-500 text-sm font-bold">Digite seu email e enviaremos as instruções.</p>
+            </div>
             {success ? (
               <div className="flex flex-col items-center gap-4 text-center">
                 <CheckCircle size={48} className="text-green-400" />
                 <p className="text-white font-bold">{success}</p>
-                <button className="btn-primary mt-4" onClick={() => { setScreen('form'); setSuccess(null) }}>VOLTAR AO LOGIN</button>
+                <button className="btn-base btn-primary px-10 mt-2" onClick={() => { setScreen('login'); reset() }}>VOLTAR AO LOGIN</button>
               </div>
             ) : (
-              <form onSubmit={handleForgot} className="flex flex-col gap-5 w-full">
-                <input name="email" type="email" placeholder="Seu email" required className={inputClass} />
-                {error && <div className="flex items-center gap-3 bg-red-900/30 border-2 border-red-500/50 rounded-2xl px-4 py-3">
-                  <AlertCircle size={20} className="text-red-400 shrink-0" />
-                  <p className="text-red-300 font-bold text-sm">{error}</p>
-                </div>}
-                <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
-                  {loading ? 'ENVIANDO...' : 'ENVIAR INSTRUÇÕES'}
-                </button>
+              <form onSubmit={handleForgot} className="flex flex-col gap-4">
+                <input name="email" type="email" placeholder="Seu email" required className={inputCls} />
+                {error && <div className="flex items-start gap-3 bg-red-950/80 border border-red-500/30 rounded-2xl px-4 py-3"><AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" /><p className="text-red-300 font-bold text-sm">{error}</p></div>}
+                <button type="submit" disabled={loading} className="btn-base btn-primary w-full py-5 disabled:opacity-50">{loading ? 'ENVIANDO...' : 'ENVIAR INSTRUÇÕES'}</button>
               </form>
             )}
           </motion.div>
         )}
 
-        {/* Reset Password */}
+        {/* ── RESET PASSWORD ── */}
         {screen === 'reset' && (
-          <motion.div key="reset" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="absolute inset-0 bg-(--color-background) z-50 flex flex-col items-center pt-24 px-6 sm:relative sm:inset-auto sm:max-w-md sm:border-2 sm:border-(--color-border) sm:rounded-[2rem] sm:p-10 sm:bg-(--color-card)">
-            <div className="text-5xl mb-6">🔒</div>
-            <h2 className="text-3xl font-black text-white mb-2 text-center">Nova senha</h2>
+          <motion.div key="reset"
+            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-sm mx-auto px-5">
+            <div className="text-center mb-7 mt-4">
+              <div className="text-5xl mb-4">🔒</div>
+              <h2 className="text-3xl font-black text-white mb-2">Nova senha</h2>
+              <p className="text-gray-500 text-sm font-bold">Defina uma nova senha segura.</p>
+            </div>
             {success ? (
-              <div className="flex flex-col items-center gap-4 text-center mt-6">
+              <div className="flex flex-col items-center gap-4 text-center">
                 <CheckCircle size={48} className="text-green-400" />
                 <p className="text-white font-bold">{success}</p>
-                <button className="btn-primary mt-4" onClick={() => { setScreen('form'); setIsLogin(true); setSuccess(null) }}>IR PARA LOGIN</button>
+                <button className="btn-base btn-primary px-10 mt-2" onClick={() => { setScreen('login'); reset() }}>IR PARA LOGIN</button>
               </div>
             ) : (
-              <form onSubmit={handleReset} className="flex flex-col gap-5 w-full mt-6">
-                <input name="password" type="password" placeholder="Nova senha" required minLength={6} className={inputClass} />
-                <input name="confirm" type="password" placeholder="Confirmar nova senha" required minLength={6} className={inputClass} />
-                {error && <div className="flex items-center gap-3 bg-red-900/30 border-2 border-red-500/50 rounded-2xl px-4 py-3">
-                  <AlertCircle size={20} className="text-red-400 shrink-0" />
-                  <p className="text-red-300 font-bold text-sm">{error}</p>
-                </div>}
-                <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
-                  {loading ? 'SALVANDO...' : 'SALVAR NOVA SENHA'}
-                </button>
+              <form onSubmit={handleReset} className="flex flex-col gap-4">
+                <input name="password" type="password" placeholder="Nova senha" required minLength={6} className={inputCls} />
+                <input name="confirm" type="password" placeholder="Confirmar nova senha" required minLength={6} className={inputCls} />
+                {error && <div className="flex items-start gap-3 bg-red-950/80 border border-red-500/30 rounded-2xl px-4 py-3"><AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" /><p className="text-red-300 font-bold text-sm">{error}</p></div>}
+                <button type="submit" disabled={loading} className="btn-base btn-primary w-full py-5 disabled:opacity-50">{loading ? 'SALVANDO...' : 'SALVAR NOVA SENHA'}</button>
               </form>
             )}
           </motion.div>

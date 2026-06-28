@@ -1,68 +1,116 @@
+import { useEffect, useState } from "react"
 import { Link } from "wouter"
-import { Shield, Target, BookOpen, Award } from "lucide-react"
+import { Flame, Star, Trophy } from "lucide-react"
+import { users, LeaderboardEntry } from "../../lib/api"
+import { useAuth } from "../../lib/AuthContext"
+
+function getLeague(xp: number): string {
+  if (xp >= 10000) return 'Mestre'
+  if (xp >= 5000) return 'Diamante'
+  if (xp >= 2000) return 'Ouro'
+  if (xp >= 500) return 'Prata'
+  return 'Bronze'
+}
+
+const LEAGUE_ICONS: Record<string, string> = {
+  'Bronze': '🥉', 'Prata': '🥈', 'Ouro': '🥇', 'Diamante': '💎', 'Mestre': '👑',
+}
 
 export function RightPanel() {
+  const { user } = useAuth()
+  const [top5, setTop5] = useState<LeaderboardEntry[]>([])
+
+  useEffect(() => {
+    users.getLeaderboard().then(data => setTop5(data.slice(0, 5))).catch(() => {})
+  }, [])
+
+  if (!user) return null
+
+  const league = getLeague(user.xpTotal)
+  const thresholds: Record<string, number> = { Bronze: 500, Prata: 2000, Ouro: 5000, Diamante: 10000, Mestre: Infinity }
+  const nextXP = thresholds[league] ?? Infinity
+  const nextName: Record<string, string> = { Bronze: 'Prata', Prata: 'Ouro', Ouro: 'Diamante', Diamante: 'Mestre', Mestre: '' }
+  const progress = nextXP === Infinity ? 100 : Math.min(100, (user.xpTotal / nextXP) * 100)
+
   return (
-    <aside className="w-full flex flex-col gap-6 select-none pl-6 border-l-2 border-(--color-border) h-full sticky top-0 pt-8 pb-10 overflow-y-auto no-scrollbar">
-      
-      {/* Ligas Preview */}
-      <div className="border-2 border-(--color-border) rounded-3xl p-6 bg-(--color-card) hover:border-gray-600 transition-colors cursor-pointer group shadow-neo-card">
-        <div className="flex justify-between items-center mb-5">
-          <h3 className="m-0 text-xl font-black text-white">Liga Inconfidência</h3>
-          <Link href="/leaderboard" className="text-(--color-primary) font-black uppercase text-xs tracking-widest hover:brightness-110">VER TUDO</Link>
+    <aside className="flex flex-col gap-5 px-5 py-6 w-full">
+
+      {/* User stats */}
+      <div className="bg-(--color-card) border-2 border-(--color-border) rounded-3xl p-5 shadow-neo-card">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-4xl leading-none">{user.avatarEmoji || '🦊'}</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-black text-white truncate">{user.username}</p>
+            <p className="text-xs text-gray-400 font-bold">Nível {user.level} · {LEAGUE_ICONS[league]} {league}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-5">
-          <div className="relative">
-            <Shield size={64} fill="#FFD700" color="#D4B200" strokeWidth={1} className="drop-shadow-lg" />
-            <Award size={24} className="absolute bottom-0 right-0 text-white fill-yellow-600 drop-shadow-md" />
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-(--color-background) rounded-2xl p-3 text-center border border-(--color-border)">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Star size={15} fill="#FFD700" color="#D4B200" />
+              <span className="text-yellow-400 font-black text-sm">{user.xpTotal.toLocaleString('pt-BR')}</span>
+            </div>
+            <p className="text-gray-500 text-xs font-bold">XP Total</p>
           </div>
-          <div className="flex-1">
-            <p className="m-0 font-bold text-gray-400 text-sm leading-tight">Você está no <span className="text-(--color-primary) font-black">Top 3</span>. Continue assim para subir de liga!</p>
+          <div className="bg-(--color-background) rounded-2xl p-3 text-center border border-(--color-border)">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Flame size={15} fill={user.streakCount > 0 ? "#FF9500" : "#374151"} color={user.streakCount > 0 ? "#FF7A00" : "#374151"} />
+              <span className={`font-black text-sm ${user.streakCount > 0 ? 'text-orange-400' : 'text-gray-600'}`}>{user.streakCount}</span>
+            </div>
+            <p className="text-gray-500 text-xs font-bold">Sequência</p>
           </div>
+        </div>
+
+        {nextXP !== Infinity && (
+          <>
+            <div className="flex justify-between text-xs font-bold text-gray-500 mb-1.5">
+              <span>{LEAGUE_ICONS[league]} {league}</span>
+              <span>{LEAGUE_ICONS[nextName[league]]} {nextName[league]}</span>
+            </div>
+            <div className="h-2.5 bg-(--color-background) rounded-full border border-(--color-border) overflow-hidden">
+              <div className="h-full bg-(--color-secondary) rounded-full" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="text-right text-xs text-gray-600 font-bold mt-1">{user.xpTotal.toLocaleString()} / {nextXP.toLocaleString()} XP</p>
+          </>
+        )}
+      </div>
+
+      {/* Top players */}
+      <div className="bg-(--color-card) border-2 border-(--color-border) rounded-3xl p-5 shadow-neo-card">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <Trophy size={17} className="text-(--color-secondary)" />
+            <h3 className="font-black text-white text-sm">Top Jogadores</h3>
+          </div>
+          <Link href="/leaderboard" className="text-(--color-primary) font-black text-xs uppercase tracking-widest hover:brightness-110">Ver tudo</Link>
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          {top5.length === 0 && (
+            <p className="text-gray-500 text-xs font-bold text-center py-3">Seja o primeiro jogador!</p>
+          )}
+          {top5.map((entry, i) => {
+            const isMe = entry.id === user.id
+            const medals = ['🥇', '🥈', '🥉']
+            return (
+              <div key={entry.id} className={`flex items-center gap-2.5 px-2 py-2 rounded-2xl ${isMe ? 'bg-(--color-primary)/10 border border-(--color-primary)/20' : ''}`}>
+                <span className="text-base w-6 text-center shrink-0">{i < 3 ? medals[i] : `${i + 1}`}</span>
+                <span className="text-xl shrink-0">{entry.avatarEmoji}</span>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-black text-xs truncate ${isMe ? 'text-(--color-primary)' : 'text-white'}`}>
+                    {entry.username}{isMe ? ' (você)' : ''}
+                  </p>
+                  <p className="text-gray-500 text-xs font-bold">{entry.xpTotal.toLocaleString()} XP</p>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      {/* Daily Quests */}
-      <div className="border-2 border-(--color-border) rounded-3xl p-6 bg-(--color-card) shadow-neo-card">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="m-0 text-xl font-black text-white">Missões Diárias</h3>
-          <Link href="/quests" className="text-(--color-primary) font-black uppercase text-xs tracking-widest hover:brightness-110">VER TUDO</Link>
-        </div>
-        
-        <div className="flex flex-col gap-6">
-          <div className="flex gap-5 items-center">
-            <div className="w-12 h-12 bg-yellow-500/10 border-2 border-yellow-500/20 rounded-2xl flex items-center justify-center shadow-inner">
-              <Target size={28} className="text-(--color-secondary)" strokeWidth={2.5} />
-            </div>
-            <div className="flex-1">
-              <p className="m-0 font-black text-white text-base mb-2">Conquiste 50 XP</p>
-              <div className="h-3 bg-[#1A2633] rounded-full overflow-hidden border border-[#2B3B4C]">
-                <div className="h-full bg-(--color-secondary) w-[60%] rounded-full shadow-inner"></div>
-              </div>
-              <p className="m-0 mt-2 text-xs font-bold text-gray-500 tracking-wide">30 / 50 XP</p>
-            </div>
-          </div>
-
-          <div className="flex gap-5 items-center">
-            <div className="w-12 h-12 bg-blue-500/10 border-2 border-blue-500/20 rounded-2xl flex items-center justify-center shadow-inner">
-              <BookOpen size={28} className="text-blue-400" strokeWidth={2.5} />
-            </div>
-            <div className="flex-1">
-              <p className="m-0 font-black text-white text-base mb-2">Leia 1 Verbete Wiki</p>
-              <div className="h-3 bg-[#1A2633] rounded-full overflow-hidden border border-[#2B3B4C]">
-                <div className="h-full bg-blue-500 w-[0%] rounded-full shadow-inner"></div>
-              </div>
-              <p className="m-0 mt-2 text-xs font-bold text-gray-500 tracking-wide">0 / 1</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-gray-500 font-bold uppercase tracking-widest pb-8">
-        <a href="#" className="hover:text-white transition-colors">Sobre</a>
-        <a href="#" className="hover:text-white transition-colors">Termos</a>
-        <a href="#" className="hover:text-white transition-colors">Privacidade</a>
-        <p className="w-full m-0 mt-2">© 2026 HistLingo. IFRS Farroupilha.</p>
+      <div className="mt-auto pt-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest">
+        <p>© 2026 HistLingo · IFRS Farroupilha</p>
       </div>
     </aside>
   )

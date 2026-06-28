@@ -1,41 +1,75 @@
 import { Link, useRoute } from "wouter"
-import { Map, Trophy, User, Book, Settings } from "lucide-react"
+import { Map, Trophy, User, Book, LogOut } from "lucide-react"
+import { useAuth } from "../../lib/AuthContext"
+import { HeaderStats } from "./HeaderStats"
 
-const NavItem = ({ href, icon: Icon, label }: { href: string; icon: any; label: string }) => {
-  const [isActive] = useRoute(href)
-  
+const NAV = [
+  { href: "/", icon: Map, label: "Jornada" },
+  { href: "/leaderboard", icon: Trophy, label: "Ligas" },
+  { href: "/wiki", icon: Book, label: "Wiki" },
+  { href: "/profile", icon: User, label: "Perfil" },
+]
+
+function NavItem({ href, icon: Icon, label }: { href: string; icon: any; label: string }) {
+  const [isActive] = useRoute(href === "/" ? href : `${href}*`)
   return (
     <Link href={href} className={`
-      flex items-center gap-4 w-full p-4 rounded-2xl font-black text-sm tracking-widest uppercase transition-all duration-200 border-2
-      ${isActive 
-        ? 'bg-(--color-primary)/10 text-(--color-primary) border-(--color-primary)/20' 
+      flex items-center gap-3 w-full py-3 px-4 rounded-2xl font-black text-sm tracking-widest uppercase transition-all border-2
+      ${isActive
+        ? 'bg-(--color-primary)/15 text-(--color-primary) border-(--color-primary)/30'
         : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white'}
     `}>
-      <Icon size={26} strokeWidth={2.5} />
+      <Icon size={24} strokeWidth={2.5} className="shrink-0" />
       <span className="hidden lg:block">{label}</span>
     </Link>
   )
 }
 
 export function Sidebar() {
+  const { user, logout } = useAuth()
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-(--color-background) border-t-2 border-(--color-border) flex justify-around p-3 lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:flex-col lg:justify-start lg:items-start lg:border-t-0 lg:border-r-2 lg:px-6 lg:py-8">
-      
-      <div className="hidden lg:flex items-center gap-3 mb-10 px-4">
-        <div className="w-10 h-10 bg-(--color-primary) rounded-xl flex items-center justify-center text-white text-xl">🏹</div>
-        <span className="text-(--color-primary) font-black text-3xl tracking-tight">HistLingo</span>
+    <nav className="
+      fixed bottom-0 left-0 right-0 z-50
+      bg-(--color-background) border-t-2 border-(--color-border)
+      flex items-center justify-around px-2 py-2
+      lg:sticky lg:top-0 lg:bottom-auto lg:left-auto lg:right-auto lg:z-auto
+      lg:w-64 lg:h-screen lg:flex-col lg:justify-between lg:items-stretch
+      lg:border-t-0 lg:border-r-2 lg:px-4 lg:py-6 lg:shrink-0
+    ">
+      {/* Logo (desktop only) */}
+      <div className="hidden lg:flex items-center gap-3 px-4 mb-6 shrink-0">
+        <div className="w-9 h-9 bg-(--color-primary) rounded-xl flex items-center justify-center text-lg shadow-neo-primary">🏹</div>
+        <span className="text-(--color-primary) font-black text-2xl tracking-tight">HistLingo</span>
       </div>
-      
-      <div className="flex w-full justify-around lg:flex-col lg:gap-3">
-        <NavItem href="/" icon={Map} label="Jornada" />
-        <NavItem href="/leaderboard" icon={Trophy} label="Ligas" />
-        <NavItem href="/wiki" icon={Book} label="Wiki" />
-        <NavItem href="/profile" icon={User} label="Perfil" />
-        
-        <div className="hidden lg:flex items-center gap-4 w-full p-4 rounded-2xl font-black text-sm tracking-widest uppercase text-gray-400 hover:bg-white/5 hover:text-white cursor-pointer transition-all mt-auto border-2 border-transparent">
-          <Settings size={26} strokeWidth={2.5} />
-          <span>Configurações</span>
-        </div>
+
+      {/* Nav links */}
+      <div className="flex items-center justify-around w-full lg:flex-col lg:gap-1 lg:flex-1">
+        {NAV.map(item => <NavItem key={item.href} {...item} />)}
+      </div>
+
+      {/* Bottom: stats + logout (desktop) */}
+      <div className="hidden lg:flex flex-col gap-3 shrink-0">
+        {/* User info */}
+        {user && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-(--color-card) rounded-2xl border-2 border-(--color-border)">
+            <span className="text-2xl shrink-0">{user.avatarEmoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-white text-sm truncate">{user.username}</p>
+              <p className="text-gray-500 text-xs font-bold truncate">{user.xpTotal.toLocaleString()} XP</p>
+            </div>
+          </div>
+        )}
+        <button onClick={logout}
+          className="flex items-center gap-3 w-full py-3 px-4 rounded-2xl font-black text-sm tracking-widest uppercase text-gray-500 border-2 border-transparent hover:bg-red-900/20 hover:text-red-400 hover:border-red-500/20 transition-all">
+          <LogOut size={22} strokeWidth={2.5} className="shrink-0" />
+          <span>Sair</span>
+        </button>
+      </div>
+
+      {/* Mobile: stats chip */}
+      <div className="lg:hidden flex items-center">
+        <HeaderStats />
       </div>
     </nav>
   )
