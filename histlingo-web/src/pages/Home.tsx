@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { Link } from "wouter"
 import { content, users, Module, Lesson } from "../lib/api"
 import { useAuth } from "../lib/AuthContext"
+import { MapCharacter } from "../components/MapCharacter"
 
 const MODULE_ICONS: Record<number, string> = { 1: '🏹', 2: '⛵', 3: '👑', 4: '⚙️', 5: '✊' }
 const MODULE_COLORS: Record<number, { bg: string; border: string; shadow: string }> = {
@@ -31,13 +32,14 @@ function getLessonStatus(
   return "locked"
 }
 
-function PathNode({ status, position, label, href, isFirstActive, activeRef }: {
+function PathNode({ status, position, label, href, isFirstActive, activeRef, moduleOrder }: {
   status: "completed" | "active" | "locked"
   position: number
   label?: string
   href?: string
   isFirstActive?: boolean
   activeRef?: React.RefObject<HTMLDivElement | null>
+  moduleOrder?: number
 }) {
   const posMap: Record<number, string> = {
     0: "right-0", [-1]: "right-8", [-2]: "right-12", 1: "-right-8", 2: "-right-12"
@@ -50,13 +52,19 @@ function PathNode({ status, position, label, href, isFirstActive, activeRef }: {
       ref={isFirstActive ? activeRef : undefined}
       className={`relative flex flex-col items-center justify-center my-5 w-full ${posMap[position] ?? 'right-0'}`}>
       {isActive && (
-        <motion.div
-          initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          transition={{ repeat: Infinity, duration: 1.4, repeatType: "reverse" }}
-          className="absolute -top-12 bg-white text-(--color-primary-dark) border-2 border-(--color-border) px-5 py-1.5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg z-30">
-          Começar!
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b-2 border-r-2 border-(--color-border) rotate-45"></div>
-        </motion.div>
+        <>
+          {/* Character above active node */}
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 z-30">
+            <MapCharacter moduleOrder={moduleOrder ?? 1} state="idle" />
+          </div>
+          <motion.div
+            initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            transition={{ repeat: Infinity, duration: 1.4, repeatType: "reverse" }}
+            className="absolute -top-36 bg-white text-(--color-primary-dark) border-2 border-(--color-border) px-5 py-1.5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg z-40">
+            Começar!
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b-2 border-r-2 border-(--color-border) rotate-45"></div>
+          </motion.div>
+        </>
       )}
       <div className="relative z-20">
         <div className={`absolute -inset-3 rounded-full border-4 ${
@@ -180,6 +188,7 @@ export function Home() {
                     href={`/quiz/${lesson.id}`}
                     isFirstActive={isFirstActive}
                     activeRef={isFirstActive ? activeRef : undefined}
+                    moduleOrder={mod.order}
                   />
                 )
               })}
