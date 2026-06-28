@@ -32,7 +32,7 @@ function getLessonStatus(
   return "locked"
 }
 
-function PathNode({ status, position, label, href, isFirstActive, activeRef, moduleOrder }: {
+function PathNode({ status, position, label, href, isFirstActive, activeRef, moduleOrder, isLastCompleted }: {
   status: "completed" | "active" | "locked"
   position: number
   label?: string
@@ -40,6 +40,7 @@ function PathNode({ status, position, label, href, isFirstActive, activeRef, mod
   isFirstActive?: boolean
   activeRef?: React.RefObject<HTMLDivElement | null>
   moduleOrder?: number
+  isLastCompleted?: boolean
 }) {
   const posMap: Record<number, string> = {
     0: "right-0", [-1]: "right-8", [-2]: "right-12", 1: "-right-8", 2: "-right-12"
@@ -50,21 +51,25 @@ function PathNode({ status, position, label, href, isFirstActive, activeRef, mod
   const inner = (
     <div
       ref={isFirstActive ? activeRef : undefined}
-      className={`relative flex flex-col items-center justify-center my-5 w-full ${posMap[position] ?? 'right-0'}`}>
-      {isActive && (
-        <>
-          {/* Character above active node */}
-          <div className="absolute -top-24 left-1/2 -translate-x-1/2 z-30">
-            <MapCharacter moduleOrder={moduleOrder ?? 1} state="idle" />
-          </div>
-          <motion.div
-            initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            transition={{ repeat: Infinity, duration: 1.4, repeatType: "reverse" }}
-            className="absolute -top-36 bg-white text-(--color-primary-dark) border-2 border-(--color-border) px-5 py-1.5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg z-40">
-            Começar!
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b-2 border-r-2 border-(--color-border) rotate-45"></div>
-          </motion.div>
-        </>
+      className={`relative flex flex-col items-center my-3 w-full ${posMap[position] ?? 'right-0'}`}>
+      {(isActive || isLastCompleted) && (
+        <div className="flex flex-col items-center gap-1 mb-1 z-30">
+          {isActive && (
+            <motion.div
+              animate={{ y: [4, 0, 4] }}
+              transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
+              className="bg-white text-(--color-primary-dark) border-2 border-(--color-border) px-4 py-1 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg relative">
+              Começar!
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b-2 border-r-2 border-(--color-border) rotate-45"></div>
+            </motion.div>
+          )}
+          {isLastCompleted && (
+            <div className="bg-yellow-400 text-yellow-900 border-2 border-yellow-600 px-4 py-1 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg">
+              🏆 Módulo Completo!
+            </div>
+          )}
+          <MapCharacter moduleOrder={moduleOrder ?? 1} state={isLastCompleted ? 'celebrate' : 'idle'} />
+        </div>
       )}
       <div className="relative z-20">
         <div className={`absolute -inset-3 rounded-full border-4 ${
@@ -137,6 +142,7 @@ export function Home() {
 
   // Find the first active lesson globally (for scroll ref)
   let firstActiveFound = false
+  let anyActiveFound = false
 
   return (
     <div className="flex flex-col gap-14 pb-24 w-full max-w-[480px] mx-auto relative pt-4">
@@ -177,7 +183,12 @@ export function Home() {
               {lessons.map((lesson, i) => {
                 const status = getLessonStatus(i, completedLessons, lessons, moduleUnlocked)
                 const isFirstActive = status === 'active' && !firstActiveFound
-                if (isFirstActive) firstActiveFound = true
+                if (isFirstActive) { firstActiveFound = true; anyActiveFound = true }
+                if (status === 'active') anyActiveFound = true
+
+                // Show character on last lesson of module when all are completed
+                const allModuleDone = lessons.every(l => completedLessons.includes(l.id))
+                const isLastCompleted = allModuleDone && i === lessons.length - 1 && !anyActiveFound
 
                 return (
                   <PathNode
@@ -189,6 +200,7 @@ export function Home() {
                     isFirstActive={isFirstActive}
                     activeRef={isFirstActive ? activeRef : undefined}
                     moduleOrder={mod.order}
+                    isLastCompleted={isLastCompleted}
                   />
                 )
               })}
