@@ -17,6 +17,6 @@ jobs:
           host: 147.93.37.148
           port: 65002
           username: u694432103
-          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          password: ${{ secrets.SSH_PASS }}
           script: /home/u694432103/histlingo/start.sh
           command_timeout: 60s
