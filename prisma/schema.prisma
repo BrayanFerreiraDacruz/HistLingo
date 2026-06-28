@@ -23,9 +23,12 @@ model User {
   level               Int          @default(1)
   streakCount         Int          @default(0) @map("streak_count")
   lastActivityDate    DateTime?    @map("last_activity_date")
-  recoveryFreezeCount Int          @default(0) @map("recovery_freeze_count")
-  createdAt           DateTime     @default(now()) @map("created_at")
-  updatedAt           DateTime     @updatedAt @map("updated_at")
+  recoveryFreezeCount  Int          @default(0) @map("recovery_freeze_count")
+  avatarEmoji          String       @default("🦊") @map("avatar_emoji")
+  passwordResetToken   String?      @map("password_reset_token")
+  passwordResetExpires DateTime?    @map("password_reset_expires")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
   userReviews         UserReview[]
   userProgress        UserProgress[]
   answers             Answer[]

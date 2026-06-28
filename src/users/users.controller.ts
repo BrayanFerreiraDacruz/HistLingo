@@ -1,7 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
@@ -9,29 +7,24 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Get('leaderboard')
+  getLeaderboard() {
+    return this.usersService.getLeaderboard();
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Get('progress')
+  getProgress(@Request() req: any) {
+    return this.usersService.getProgress(req.user.id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  @Patch('profile')
+  updateProfile(@Request() req: any, @Body() dto: { username?: string; avatarEmoji?: string }) {
+    return this.usersService.updateProfile(req.user.id, dto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  @Post(':id/complete-lesson')
+  completeLesson(@Param('id') userId: string, @Body() body: { lessonId: string }) {
+    return this.usersService.completeLesson(userId, body.lessonId);
   }
 
   @Post(':id/streak/update')
@@ -40,10 +33,7 @@ export class UsersController {
   }
 
   @Post(':id/answer')
-  submitAnswer(
-    @Param('id') id: string,
-    @Body() answerData: { challengeId: string; quality: number },
-  ) {
-    return this.usersService.submitAnswer(id, answerData.challengeId, answerData.quality);
+  submitAnswer(@Param('id') id: string, @Body() body: { challengeId: string; quality: number }) {
+    return this.usersService.submitAnswer(id, body.challengeId, body.quality);
   }
 }

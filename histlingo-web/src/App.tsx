@@ -4,6 +4,8 @@ import { AppLayout } from "./components/layout/AppLayout"
 import { Home } from "./pages/Home"
 import { Quiz } from "./pages/Quiz"
 import { Auth } from "./pages/Auth"
+import { Leaderboard } from "./pages/Leaderboard"
+import { Profile } from "./pages/Profile"
 
 function AppRoutes() {
   const { user, isLoading } = useAuth()
@@ -16,7 +18,14 @@ function AppRoutes() {
     )
   }
 
-  if (!user) {
+  // Reset password page doesn't require login
+  const isResetRoute = window.location.pathname === '/reset-password' || window.location.search.includes('token=')
+
+  if (!user && !isResetRoute) {
+    return <Auth />
+  }
+
+  if (!user && isResetRoute) {
     return <Auth />
   }
 
@@ -29,14 +38,10 @@ function AppRoutes() {
         <AppLayout>
           <Switch>
             <Route path="/" component={Home} />
-            <Route path="/leaderboard">
-              <div className="text-center text-white p-10 font-bold text-2xl">Ligas em construção...</div>
-            </Route>
+            <Route path="/leaderboard" component={Leaderboard} />
+            <Route path="/profile" component={Profile} />
             <Route path="/wiki">
               <div className="text-center text-white p-10 font-bold text-2xl">Wiki em construção...</div>
-            </Route>
-            <Route path="/profile">
-              <div className="text-center text-white p-10 font-bold text-2xl">Perfil em construção...</div>
             </Route>
           </Switch>
         </AppLayout>

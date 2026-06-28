@@ -6,7 +6,8 @@ export class ContentService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
   async onModuleInit() {
-    await this.seedContent();
+    const count = await this.prisma.lesson.count();
+    if (count < 15) await this.seedContent();
   }
 
   private async seedContent() {
@@ -270,6 +271,10 @@ export class ContentService implements OnModuleInit {
 
   async getLessonsByModule(moduleId: string) {
     return this.prisma.lesson.findMany({ where: { moduleId }, orderBy: { order: 'asc' } });
+  }
+
+  async getLessonById(lessonId: string) {
+    return this.prisma.lesson.findUnique({ where: { id: lessonId } });
   }
 
   async getChallengesByLesson(lessonId: string) {

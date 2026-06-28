@@ -17,6 +17,11 @@ export class ContentController {
     return this.contentService.getLessonsByModule(moduleId);
   }
 
+  @Get('lessons/:id')
+  getLesson(@Param('id') lessonId: string) {
+    return this.contentService.getLessonById(lessonId);
+  }
+
   @Get('lessons/:id/challenges')
   getChallenges(@Param('id') lessonId: string) {
     return this.contentService.getChallengesByLesson(lessonId);

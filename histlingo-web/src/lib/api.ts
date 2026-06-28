@@ -24,7 +24,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `Erro ${res.status}`);
+    const err = new Error(body.message || `Erro ${res.status}`) as Error & { status: number };
+    err.status = res.status;
+    throw err;
   }
 
   return res.json();
@@ -51,20 +53,40 @@ export const auth = {
 
   me: () => request<User>('/auth/me'),
 
-  logout: () => {
-    clearToken();
-  },
+  logout: () => { clearToken(); },
 
   isLoggedIn: () => !!getToken(),
+
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, password: string) =>
+    request<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    }),
 };
 
 export const content = {
   getModules: () => request<Module[]>('/content/modules'),
   getLessons: (moduleId: string) => request<Lesson[]>(`/content/modules/${moduleId}/lessons`),
+  getLesson: (lessonId: string) => request<Lesson>(`/content/lessons/${lessonId}`),
   getChallenges: (lessonId: string) => request<Challenge[]>(`/content/lessons/${lessonId}/challenges`),
 };
 
 export const users = {
+  getLeaderboard: () => request<LeaderboardEntry[]>('/users/leaderboard'),
+  getProgress: () => request<string[]>('/users/progress'),
+  updateProfile: (dto: { username?: string; avatarEmoji?: string }) =>
+    request<User>('/users/profile', { method: 'PATCH', body: JSON.stringify(dto) }),
+  completeLesson: (userId: string, lessonId: string) =>
+    request<{ xpGained: number; firstTime: boolean }>(`/users/${userId}/complete-lesson`, {
+      method: 'POST',
+      body: JSON.stringify({ lessonId }),
+    }),
   submitAnswer: (userId: string, challengeId: string, quality: number) =>
     request<{ xpGain: number; nextReviewDate: string }>(`/users/${userId}/answer`, {
       method: 'POST',
@@ -85,6 +107,18 @@ export interface User {
   streakCount: number;
   lastActivityDate: string | null;
   createdAt: string;
+  avatarEmoji: string;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  username: string;
+  xpTotal: number;
+  level: number;
+  streakCount: number;
+  avatarEmoji: string;
+  rank: number;
+  league: string;
 }
 
 export interface Module {

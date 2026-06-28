@@ -22,7 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     auth.me()
       .then(setUser)
-      .catch(() => auth.logout())
+      .catch((err: any) => {
+        // Only clear token if explicitly unauthorized — not on server errors (503, network down)
+        if (err?.status === 401) auth.logout();
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
