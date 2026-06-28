@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  STUDENT
+}
+
+model User {
+  id                  String       @id @default(uuid())
+  username            String       @unique
+  name                String?      @map("name")
+  email               String       @unique
+  password            String
+  role                UserRole     @default(STUDENT) @map("role")
+  xpTotal             Int          @default(0) @map("xp_total")
+  level               Int          @default(1)
+  streakCount         Int          @default(0) @map("streak_count")
+  lastActivityDate    DateTime?    @map("last_activity_date")
+  recoveryFreezeCount Int          @default(0) @map("recovery_freeze_count")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+  userReviews         UserReview[]
+  userProgress        UserProgress[]
+  answers             Answer[]
+  performance         Performance?
+
+  @@map("users")
+}
+
+model Module {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  order       Int      @unique
+  lessons     Lesson[]
+
+  @@map("modules")
+}
+
+model Lesson {
+  id          String      @id @default(uuid())
+  moduleId    String      @map("module_id")
+  module      Module      @relation(fields: [moduleId], references: [id])
+  title       String
+  content     String      @db.Text
+  xpReward    Int         @default(10) @map("xp_reward")
+  order       Int
+  challenges  Challenge[]
+  userProgress UserProgress[]
+
+  @@map("lessons")
+}
+
+enum ChallengeType {
+  WHO_AM_I
+  WORKS_AND_RELICS
+  TIMELINE
+  DECISION_SCENARIO
+}
+
+model Challenge {
+  id               String        @id @default(uuid())
+  lessonId         String        @map("lesson_id")
+  lesson           Lesson        @relation(fields: [lessonId], references: [id])
+  type             ChallengeType
+  content          String        @db.Text
+  options          Json?         // For multiple choice or ordering
+  correctAnswer    String        @map("correct_answer")
+  explanation      String?       @db.Text
+  difficultyWeight Float         @default(1.0) @map("difficulty_weight")
+  userReviews      UserReview[]
+  answers          Answer[]
+
+  @@map("challenges")
+}
+
+model Answer {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  user           User      @relation(fields: [userId], references: [id])
+  challengeId    String    @map("challenge_id")
+  challenge      Challenge @relation(fields: [challengeId], references: [id])
+  answerProvided String    @map("answer_provided")
+  isCorrect      Boolean   @map("is_correct")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("answers")
+}
+
+model Performance {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  totalScore   Int      @default(0) @map("total_score")
+  totalCorrect Int      @default(0) @map("total_correct")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("performances")
+}
+
+model UserReview {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  user           User      @relation(fields: [userId], references: [id])
+  challengeId    String    @map("challenge_id")
+  challenge      Challenge @relation(fields: [challengeId], references: [id])
+  easeFactor     Float     @default(2.5) @map("ease_factor")
+  interval       Int       @default(0)
+  repetitions    Int       @default(0)
+  nextReviewDate DateTime  @map("next_review_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("user_reviews")
+}
+
+model UserProgress {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  lessonId  String   @map("lesson_id")
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  completed Boolean  @default(false)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, lessonId])
+  @@map("user_progress")
+}
+

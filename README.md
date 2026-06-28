@@ -1,206 +1,98 @@
-# 📚 HistLingo - Guia Completo
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
 
-## 🚀 INÍCIO RÁPIDO
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-### Opção 1: IntelliJ IDEA (RECOMENDADO)
-```
-1. Build > Build Project          (Ctrl+F9)
-2. Run > Run HistlimgoApplication (Shift+F10)
-3. Aguarde: "Tomcat started on port(s): 8082"
-4. Abra: http://localhost:8082/swagger-ui.html
-```
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-### Opção 2: Terminal
-```powershell
-cd C:\Users\user\IdeaProjects\HistLingo
-mvn clean spring-boot:run
-```
+## Description
 
----
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## 🌐 URLs PRINCIPAIS
+## Project setup
 
-| Recurso | URL |
-|---------|-----|
-| **API Base** | http://localhost:8082 |
-| **Swagger UI** | http://localhost:8082/swagger-ui.html |
-| **OpenAPI Docs** | http://localhost:8082/api-docs |
-| **H2 Console** | http://localhost:8082/h2-console |
-
----
-
-
-
-## 📦 TECNOLOGIAS
-
-| Componente | Versão |
-|-----------|--------|
-| Java | 17 (openjdk-25.0.2) |
-| Spring Boot | 3.2.3 |
-| Spring Framework | 6.1.4 |
-| Banco | H2 2.2.224 (em memória) |
-| Build Tool | Maven 3.8.x |
-| Lombok | 1.18.30 |
-| Swagger | 2.0.2 |
-| Tomcat | 10.1.19 |
-
----
-
-## 🔧 CONFIGURAÇÕES
-
-### Arquivo Principal
-- **Location:** `src/main/resources/application.properties`
-- **Porta:** 8082
-- **Banco:** H2 em memória (jdbc:h2:mem:histlimgo)
-- **Profile Ativo:** dev
-
-### Banco de Dados H2
-- **URL:** jdbc:h2:mem:histlimgo
-- **User:** SA
-- **Password:** (vazio)
-- **Console:** http://localhost:8082/h2-console
-
----
-
-## 🛠️ ESTRUTURA DO PROJETO
-
-```
-src/main/
-├── java/com/histlimgo/
-│   ├── HistlimgoApplication.java (classe principal)
-│   ├── api/v1/
-│   │   ├── controller/
-│   │   │   ├── GlobalExceptionHandler.java
-│   │   │   └── UserController.java
-│   │   └── dto/
-│   │       └── UserDTO.java
-│   ├── application/service/
-│   │   ├── GamificationService.java
-│   │   └── SRSImplementation.java
-│   ├── config/
-│   │   └── OpenApiConfig.java
-│   └── domain/
-│       ├── model/
-│       │   ├── Challenge.java
-│       │   ├── Lesson.java
-│       │   ├── Module.java
-│       │   ├── User.java
-│       │   └── etc...
-│       └── repository/
-│           └── UserRepository.java
-└── resources/
-    ├── application.properties
-    ├── application-dev.properties
-    ├── application-prod.properties
-    └── db/migration/
-        └── schema.sql
+```bash
+$ npm install
 ```
 
----
+## Compile and run the project
 
-## 🔧 TROUBLESHOOTING
+```bash
+# development
+$ npm run start
 
-### Erro: NoClassDefFoundError: org/springframework/boot/SpringApplication
+# watch mode
+$ npm run start:dev
 
-**Solução:**
-
-1. **Feche completamente o IntelliJ IDEA**
-
-2. **Execute o script:**
-   ```powershell
-   RESOLVER_CLASSPATH.bat
-   ```
-
-3. **Reabra o IntelliJ IDEA**
-   - IntelliJ vai reindexar o projeto automaticamente
-
-4. **Aguarde a reindexação completar**
-   - Você verá "Indexing..." na barra inferior
-
-5. **Clique em Run:**
-   ```
-   Run > Run HistlimgoApplication (Shift+F10)
-   ```
-
----
-
-### Porta já em uso
-Se porta 8082 estiver em uso, mude em `application.properties`:
-```properties
-server.port=8083
+# production mode
+$ npm run start:prod
 ```
 
-### Projeto não compila
-1. Clique em `File > Invalidate Caches`
-2. Reinicie o IntelliJ
-3. Execute `Build > Build Project` (Ctrl+F9)
+## Run tests
 
----
-O H2 está em memória, portanto:
-- Dados são perdidos ao reiniciar
-- Console H2 em http://localhost:8082/h2-console
-- Para usar PostgreSQL: mude `application.properties`
+```bash
+# unit tests
+$ npm run test
 
----
+# e2e tests
+$ npm run test:e2e
 
-## 📝 O QUE FOI FEITO
+# test coverage
+$ npm run test:cov
+```
 
+## Deployment
 
+When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 
-### Soluções Implementadas
-✅ H2 Database adicionado ao pom.xml
-✅ Lombok 1.18.30 configurado
-✅ GamificationService.java recriado
-✅ Schema SQL adaptado para H2
-✅ Encoding dos arquivos corrigido
-✅ Porta configurada para 8082
-✅ Projeto compilando e rodando
+If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
 
----
+```bash
+$ npm install -g @nestjs/mau
+$ mau deploy
+```
 
-## 📚 ENDPOINTS DISPONÍVEIS
+With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
-Veja em: http://localhost:8082/swagger-ui.html
+## Resources
 
-Principais controllers:
-- **UserController** - Gerenciamento de usuários
-- **GlobalExceptionHandler** - Tratamento centralizado de erros
+Check out a few resources that may come in handy when working with NestJS:
 
----
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
+- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
+- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
+- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
+- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
 
-## 💾 BANCO DE DADOS
+## Support
 
-### Schema Automático
-O banco é criado automaticamente ao iniciar:
-- Arquivo: `src/main/resources/db/migration/schema.sql`
-- Tables: modules, lessons, challenges, users, user_reviews
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-### H2 Console
-- URL: http://localhost:8082/h2-console
-- JDBC URL: `jdbc:h2:mem:histlimgo`
-- User: `SA`
-- Password: (deixar em branco)
+## Stay in touch
 
----
+- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
-## 🎯 PRÓXIMAS AÇÕES
+## License
 
-1. ✅ Compilar e rodar
-2. ✅ Testar endpoints em Swagger UI
-3. ✅ Verificar logs
-4. ✅ Desenvolver features
-
----
-
-## 📞 SUPORTE
-
-Em caso de dúvidas:
-- Verifique logs no console do IntelliJ
-- Use H2 Console para inspecionar banco
-- Teste endpoints em Swagger UI
-- Verifique application.properties
-
----
-
-
-
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

@@ -1,17 +1,20 @@
 # Build stage
-FROM maven:3.9.0-eclipse-temurin-17 AS builder
-WORKDIR /build
-COPY pom.xml .
-RUN mvn dependency:go-offline
-COPY src ./src
-RUN mvn clean package -DskipTests
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npx prisma generate
+RUN npm run build
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM node:20-alpine
 WORKDIR /app
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/prisma ./prisma
 
-EXPOSE 8080
+EXPOSE 3000
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
-
+CMD ["npm", "run", "start:prod"]
