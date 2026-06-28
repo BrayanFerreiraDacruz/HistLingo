@@ -45,13 +45,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tryLoadUser();
   }, [tryLoadUser]);
 
-  // When server is down and we have a token, retry every 8 seconds
+  // When server is down, retry every 8 seconds via health check
   useEffect(() => {
-    if (!serverDown || !auth.isLoggedIn()) return;
-    const id = setInterval(() => {
-      auth.me()
-        .then(me => { setUser(me); setServerDown(false); })
-        .catch(() => {});
+    if (!serverDown) return;
+    const id = setInterval(async () => {
+      try {
+        // Ping health endpoint — doesn't need a token
+        const res = await fetch((import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')) + '/health', { signal: AbortSignal.timeout(5000) });
+        if (res.ok || res.status === 401) {
+          // Server is back — reload user if logged in, else go to login
+          setServerDown(false);
+          if (auth.isLoggedIn()) {
+            auth.me().then(me => setUser(me)).catch(() => { auth.logout(); setUser(null); });
+          }
+        }
+      } catch {
+        // still down — keep waiting
+      }
     }, 8000);
     return () => clearInterval(id);
   }, [serverDown]);
