@@ -1,12 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
@@ -47,14 +45,14 @@ model Module {
 }
 
 model Lesson {
-  id          String      @id @default(uuid())
-  moduleId    String      @map("module_id")
-  module      Module      @relation(fields: [moduleId], references: [id])
-  title       String
-  content     String      @db.Text
-  xpReward    Int         @default(10) @map("xp_reward")
-  order       Int
-  challenges  Challenge[]
+  id           String         @id @default(uuid())
+  moduleId     String         @map("module_id")
+  module       Module         @relation(fields: [moduleId], references: [id])
+  title        String
+  content      String         @db.Text
+  xpReward     Int            @default(10) @map("xp_reward")
+  order        Int
+  challenges   Challenge[]
   userProgress UserProgress[]
 
   @@map("lessons")
@@ -73,7 +71,7 @@ model Challenge {
   lesson           Lesson        @relation(fields: [lessonId], references: [id])
   type             ChallengeType
   content          String        @db.Text
-  options          Json?         // For multiple choice or ordering
+  options          Json?
   correctAnswer    String        @map("correct_answer")
   explanation      String?       @db.Text
   difficultyWeight Float         @default(1.0) @map("difficulty_weight")
@@ -134,4 +132,3 @@ model UserProgress {
   @@unique([userId, lessonId])
   @@map("user_progress")
 }
-
