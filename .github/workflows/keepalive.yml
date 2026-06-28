@@ -2,21 +2,26 @@ name: Keep Server Alive
 
 on:
   schedule:
-    - cron: '*/5 * * * *'   # every 5 minutes
-  workflow_dispatch:          # allow manual trigger from GitHub UI
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
 
     steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
       - name: Restart histlingo if down
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: 147.93.37.148
-          port: 65002
-          username: u694432103
-          password: ${{ secrets.SSH_PASS }}
-          script: /home/u694432103/histlingo/start.sh
-          command_timeout: 60s
+        env:
+          SSHPASS: ${{ secrets.SSH_PASS }}
+        run: |
+          sshpass -e ssh \
+            -p 65002 \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=30 \
+            -o ServerAliveInterval=10 \
+            u694432103@147.93.37.148 \
+            "/home/u694432103/histlingo/start.sh"
