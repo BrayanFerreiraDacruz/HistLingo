@@ -7,7 +7,7 @@ export class ContentService implements OnModuleInit {
 
   async onModuleInit() {
     const count = await this.prisma.lesson.count();
-    if (count < 15) await this.seedContent();
+    if (count < 30) await this.seedContent();
   }
 
   private async seedContent() {
@@ -64,6 +64,31 @@ export class ContentService implements OnModuleInit {
         content: 'Em 1984, o movimento "Diretas Já" mobilizou milhões de brasileiros pedindo eleições diretas para presidente. A emenda Dante de Oliveira foi rejeitada, mas a pressão popular foi fundamental. Em 1985, Tancredo Neves foi eleito indiretamente, mas morreu antes de assumir. José Sarney governou na transição. Em 1988, a Constituição Cidadã foi promulgada.' },
       { id: 'l-5-3', moduleOrder: 5, order: 3, title: 'A Constituição de 1988', xpReward: 30,
         content: 'A Constituição Federal de 1988, chamada "Constituição Cidadã" por Ulysses Guimarães, garantiu direitos fundamentais: saúde, educação, moradia, lazer. Criou o SUS (Sistema Único de Saúde), o Estatuto da Criança e do Adolescente e proteções trabalhistas. É considerada uma das constituições mais avançadas do mundo em direitos sociais.' },
+      // Module 1 - new lessons
+      { id: 'l-1-4', moduleOrder: 1, order: 4, title: 'Mitos e Cosmologias', xpReward: 20,
+        content: 'Os povos indígenas possuíam ricas mitologias. Os Tupi acreditavam em Tupã, o deus do trovão e da chuva, e em Jurupari, espírito maligno. A Terra Sem Males (Yby Marã Eỹ) era o paraíso tupi — uma terra de abundância sem morte. Essas crenças motivaram as grandes migrações tupi pelo continente sul-americano.' },
+      { id: 'l-1-5', moduleOrder: 1, order: 5, title: 'Resistência e Genocídio', xpReward: 25,
+        content: 'Após 1500, a população indígena caiu de 2-5 milhões para menos de 300 mil em 1900 — uma redução de 90%. As causas foram: doenças (varíola, sarampo), escravidão, guerras e destruição cultural. A FUNAI, criada em 1967, protege os mais de 300 povos indígenas que ainda existem no Brasil, muitos com contato restrito ou sem contato com a sociedade não-indígena.' },
+      // Module 2 - new lessons
+      { id: 'l-2-4', moduleOrder: 2, order: 4, title: 'Capitanias Hereditárias', xpReward: 20,
+        content: 'Em 1534, D. João III dividiu o Brasil em 14 capitanias hereditárias para colonizá-lo sem gastar dinheiro da coroa. Donatários nobres recebiam terras em troca de colonizar. Poucos tiveram sucesso — Pernambuco (Duarte Coelho) e São Vicente foram as exceções. Em 1548, o governo-geral foi criado para centralizar a administração.' },
+      { id: 'l-2-5', moduleOrder: 2, order: 5, title: 'O Ciclo do Açúcar', xpReward: 25,
+        content: 'O açúcar dominou a economia brasileira do século XVI ao XVIII. Pernambuco e Bahia eram os maiores produtores. Os engenhos dependiam do trabalho escravo africano. A invasão holandesa (1630-1654), liderada por Maurício de Nassau, ocupou Pernambuco e modernizou a colônia — Nassau construiu pontes, trouxe artistas e cientistas, e publicou mapas do Brasil.' },
+      // Module 3 - new lessons
+      { id: 'l-3-4', moduleOrder: 3, order: 4, title: 'D. Pedro II e o Segundo Reinado', xpReward: 25,
+        content: 'D. Pedro II governou por 49 anos (1841-1889), o maior reinado da história brasileira. Foi um monarca culto — aprendia idiomas, dialogava com Darwin e Hugo. Seu reinado foi marcado pela modernização: telégrafo, ferrovia e a Guerra do Paraguai. Paradoxalmente, ao apoiar a abolição da escravidão em 1888, perdeu o apoio dos fazendeiros, acelerando a queda da monarquia.' },
+      { id: 'l-3-5', moduleOrder: 3, order: 5, title: 'A Guerra do Paraguai', xpReward: 30,
+        content: 'A Guerra do Paraguai (1864-1870) foi o maior conflito armado da história da América do Sul. A Tríplice Aliança (Brasil, Argentina e Uruguai) enfrentou o Paraguai de Solano López. O Brasil perdeu 150 mil soldados. O Paraguai foi devastado: perdeu 90% da população masculina adulta. O conflito gerou a primeira grande mobilização de soldados negros libertos no Brasil.' },
+      // Module 4 - new lessons
+      { id: 'l-4-4', moduleOrder: 4, order: 4, title: 'A Revolta da Vacina', xpReward: 20,
+        content: 'Em 1904, o sanitarista Oswaldo Cruz implantou a vacinação obrigatória contra varíola no Rio de Janeiro. A população, sem explicação adequada, revoltou-se: durante uma semana, o Rio virou um campo de batalha. Bondes foram derrubados, postes quebrados. A revolta foi debelada, mas evidenciou o abismo entre governo e povo na Primeira República.' },
+      { id: 'l-4-5', moduleOrder: 4, order: 5, title: 'Semana de Arte Moderna de 1922', xpReward: 20,
+        content: 'Em fevereiro de 1922, no Teatro Municipal de São Paulo, a Semana de Arte Moderna revolucionou a cultura brasileira. Artistas como Tarsila do Amaral, Anita Malfatti, Oswald de Andrade e Mário de Andrade questionaram os padrões europeus e buscaram uma identidade artística genuinamente brasileira. O movimento influenciou literatura, pintura, música e arquitetura por décadas.' },
+      // Module 5 - new lessons
+      { id: 'l-5-4', moduleOrder: 5, order: 4, title: 'O Milagre Econômico e a Repressão', xpReward: 25,
+        content: 'Entre 1969 e 1973, o Brasil cresceu em média 10% ao ano — o "Milagre Econômico". Rodovias, usinas e Brasília foram construídas. Mas o regime militar reprimia violentamente a oposição: tortura, desaparecimentos e exílio eram comuns. A Guerrilha do Araguaia (1972-1974) foi a maior ação armada contra a ditadura, com cerca de 70 guerrilheiros exterminados pelo Exército.' },
+      { id: 'l-5-5', moduleOrder: 5, order: 5, title: 'Collor, Plano Real e a Nova República', xpReward: 25,
+        content: 'Fernando Collor (1990-1992) foi o primeiro presidente eleito diretamente após a ditadura, mas sofreu impeachment por corrupção. Itamar Franco assumiu e lançou o Plano Real (1994) com Fernando Henrique Cardoso, estabilizando a moeda e encerrando a hiperinflação. Lula da Silva, eleito em 2002, representou a chegada de um operário à presidência — marco histórico da democracia brasileira.' },
     ];
 
     for (const l of lessonsData) {
@@ -245,6 +270,116 @@ export class ContentService implements OnModuleInit {
         options: ['SUS (Sistema Único de Saúde)', 'INSS (Instituto Nacional do Seguro Social)', 'FUNAI (Fundação Nacional dos Povos Indígenas)', 'IBGE (Instituto Brasileiro de Geografia)'],
         correctAnswer: 'SUS (Sistema Único de Saúde)',
         explanation: 'O SUS foi criado pela Constituição de 1988 como um sistema de saúde universal, gratuito e integral.' },
+      // l-1-4 challenges
+      { id: 'c-1-4-1', lessonId: 'l-1-4', type: 'WHO_AM_I' as const,
+        content: 'Sou o deus do trovão e da chuva na mitologia Tupi. Meu nome foi dado ao Brasil por missionários. Hoje, meu nome é um dos mais populares do país. Quem sou eu?',
+        options: ['Tupã', 'Jurupari', 'Anhangá', 'Guaraci'],
+        correctAnswer: 'Tupã',
+        explanation: 'Tupã era o deus do trovão na mitologia Tupi. Os jesuítas usaram seu nome para traduzir "Deus" ao catequizar os índios.' },
+      { id: 'c-1-4-2', lessonId: 'l-1-4', type: 'DECISION_SCENARIO' as const,
+        content: 'Você é um líder Tupi do século XV. A Terra Sem Males fica a leste, mas a jornada é perigosa. Você leva sua aldeia nessa migração?',
+        options: ['Sim, parto em busca da Terra Sem Males', 'Não, fico nas terras conhecidas', 'Envio guerreiros para explorar primeiro', 'Consulto o pajé antes de decidir'],
+        correctAnswer: 'Consulto o pajé antes de decidir',
+        explanation: 'Nas sociedades indígenas, o pajé era consultado para decisões importantes, pois era o intermediário com o mundo espiritual.' },
+      // l-1-5 challenges
+      { id: 'c-1-5-1', lessonId: 'l-1-5', type: 'TIMELINE' as const,
+        content: 'Qual foi a principal causa da redução drástica da população indígena após 1500?',
+        options: ['Doenças trazidas pelos europeus', 'Guerras tribais entre indígenas', 'Migração voluntária para outros países', 'Falta de alimentos'],
+        correctAnswer: 'Doenças trazidas pelos europeus',
+        explanation: 'As doenças europeias como varíola e sarampo mataram até 90% dos indígenas, pois não tinham imunidade contra elas.' },
+      { id: 'c-1-5-2', lessonId: 'l-1-5', type: 'WORKS_AND_RELICS' as const,
+        content: 'Qual órgão do governo brasileiro protege os povos indígenas atualmente?',
+        options: ['FUNAI', 'IBAMA', 'INCRA', 'ANVISA'],
+        correctAnswer: 'FUNAI',
+        explanation: 'A FUNAI (Fundação Nacional dos Povos Indígenas), criada em 1967, é responsável pela proteção e demarcação de terras indígenas.' },
+      // l-2-4 challenges
+      { id: 'c-2-4-1', lessonId: 'l-2-4', type: 'TIMELINE' as const,
+        content: 'Em que ano D. João III dividiu o Brasil em capitanias hereditárias?',
+        options: ['1534', '1500', '1549', '1580'],
+        correctAnswer: '1534',
+        explanation: 'Em 1534, D. João III criou as 14 capitanias hereditárias para colonizar o Brasil sem custos para a coroa.' },
+      { id: 'c-2-4-2', lessonId: 'l-2-4', type: 'WHO_AM_I' as const,
+        content: 'Sou o primeiro Governador-Geral do Brasil, chegado em 1549. Trouxe os jesuítas, fundei a cidade de Salvador e centralizei a administração colonial. Quem sou eu?',
+        options: ['Tomé de Sousa', 'Duarte Coelho', 'Mem de Sá', 'Martim Afonso de Sousa'],
+        correctAnswer: 'Tomé de Sousa',
+        explanation: 'Tomé de Sousa chegou em 1549 como o 1º Governador-Geral, fundou Salvador (1ª capital do Brasil) e trouxe os jesuítas para catequizar os indígenas.' },
+      // l-2-5 challenges
+      { id: 'c-2-5-1', lessonId: 'l-2-5', type: 'WHO_AM_I' as const,
+        content: 'Sou o governador holandês do Nordeste brasileiro entre 1637-1644. Modernizei a região, construí pontes, trouxe artistas e fui tolerante com judeus e católicos. Quem sou eu?',
+        options: ['Maurício de Nassau', 'Henrique Dias', 'Felipe Camarão', 'João Fernandes Vieira'],
+        correctAnswer: 'Maurício de Nassau',
+        explanation: 'Maurício de Nassau governou o Nordeste holandês com tolerância religiosa e modernização. Seu governo foi tão respeitado que os pernambucanos lamentaram sua saída.' },
+      { id: 'c-2-5-2', lessonId: 'l-2-5', type: 'DECISION_SCENARIO' as const,
+        content: 'Você é um senhor de engenho em Pernambuco em 1630. Os holandeses invadiram. O que você faz?',
+        options: ['Me rendo e coopero com os holandeses', 'Fujo para a Bahia com minha família', 'Participo da resistência portuguesa', 'Negocio com ambos os lados'],
+        correctAnswer: 'Me rendo e coopero com os holandeses',
+        explanation: 'Muitos senhores de engenho inicialmente cooperaram com os holandeses para manter suas propriedades. A resistência só se organizou anos depois, na Insurreição Pernambucana (1645).' },
+      // l-3-4 challenges
+      { id: 'c-3-4-1', lessonId: 'l-3-4', type: 'WHO_AM_I' as const,
+        content: 'Governei o Brasil por 49 anos, o maior reinado da nossa história. Era apaixonado por ciências, conhecia Darwin pessoalmente e falei vários idiomas. Quem sou eu?',
+        options: ['D. Pedro II', 'D. Pedro I', 'D. João VI', 'Princesa Isabel'],
+        correctAnswer: 'D. Pedro II',
+        explanation: 'D. Pedro II governou de 1841 a 1889, sendo considerado um dos mais cultos monarcas da história. Falava latim, hebraico, tupi, entre outros idiomas.' },
+      { id: 'c-3-4-2', lessonId: 'l-3-4', type: 'WORKS_AND_RELICS' as const,
+        content: 'Por que a abolição da escravatura em 1888 acelerou a queda da monarquia?',
+        options: ['Os fazendeiros se sentiram traídos e apoiaram a república', 'Os escravos libertos votaram contra a monarquia', 'D. Pedro II morreu logo após a abolição', 'A Inglaterra exigiu mudança de regime'],
+        correctAnswer: 'Os fazendeiros se sentiram traídos e apoiaram a república',
+        explanation: 'Os grandes fazendeiros, sem indenização pela perda de escravos, retiraram o apoio à monarquia e financiaram o movimento republicano.' },
+      // l-3-5 challenges
+      { id: 'c-3-5-1', lessonId: 'l-3-5', type: 'TIMELINE' as const,
+        content: 'Quais países formaram a Tríplice Aliança na Guerra do Paraguai?',
+        options: ['Brasil, Argentina e Uruguai', 'Brasil, Chile e Argentina', 'Brasil, Portugal e Argentina', 'Brasil, Bolívia e Uruguai'],
+        correctAnswer: 'Brasil, Argentina e Uruguai',
+        explanation: 'A Tríplice Aliança foi formada por Brasil, Argentina e Uruguai contra o Paraguai de Francisco Solano López (1864-1870).' },
+      { id: 'c-3-5-2', lessonId: 'l-3-5', type: 'WORKS_AND_RELICS' as const,
+        content: 'Qual foi uma consequência importante da Guerra do Paraguai para o Paraguai?',
+        options: ['Perdeu 90% da população masculina adulta', 'Tornou-se parte do Brasil', 'Enriqueceu com indenizações de guerra', 'Conquistou territórios brasileiros'],
+        correctAnswer: 'Perdeu 90% da população masculina adulta',
+        explanation: 'O Paraguai foi devastado. Estimativas indicam que a população masculina adulta foi reduzida em até 90%, e o país demorou décadas para se recuperar.' },
+      // l-4-4 challenges
+      { id: 'c-4-4-1', lessonId: 'l-4-4', type: 'WHO_AM_I' as const,
+        content: 'Sou o médico sanitarista que combateu a febre amarela e a varíola no Rio de Janeiro no início do século XX. Minha campanha de vacinação obrigatória gerou uma revolta popular. Quem sou eu?',
+        options: ['Oswaldo Cruz', 'Carlos Chagas', 'Adolfo Lutz', 'Vital Brazil'],
+        correctAnswer: 'Oswaldo Cruz',
+        explanation: 'Oswaldo Cruz foi o diretor de Saúde Pública que erradicou a febre amarela e a varíola do Rio de Janeiro, mas sua vacinação obrigatória gerou a Revolta da Vacina em 1904.' },
+      { id: 'c-4-4-2', lessonId: 'l-4-4', type: 'TIMELINE' as const,
+        content: 'Em que ano ocorreu a Revolta da Vacina no Rio de Janeiro?',
+        options: ['1904', '1889', '1922', '1932'],
+        correctAnswer: '1904',
+        explanation: 'A Revolta da Vacina ocorreu em novembro de 1904, quando a população do Rio de Janeiro se rebelou contra a vacinação obrigatória contra a varíola.' },
+      // l-4-5 challenges
+      { id: 'c-4-5-1', lessonId: 'l-4-5', type: 'TIMELINE' as const,
+        content: 'Em que cidade e ano ocorreu a Semana de Arte Moderna?',
+        options: ['São Paulo, 1922', 'Rio de Janeiro, 1922', 'São Paulo, 1932', 'Rio de Janeiro, 1930'],
+        correctAnswer: 'São Paulo, 1922',
+        explanation: 'A Semana de Arte Moderna ocorreu em fevereiro de 1922 no Teatro Municipal de São Paulo, marcando os 100 anos da Independência.' },
+      { id: 'c-4-5-2', lessonId: 'l-4-5', type: 'WHO_AM_I' as const,
+        content: 'Sou uma pintora paulista que viajei à Europa e trouxe o modernismo ao Brasil. Minhas obras "Abaporu" e "Operários" são ícones da arte brasileira. Quem sou eu?',
+        options: ['Tarsila do Amaral', 'Anita Malfatti', 'Di Cavalcanti', 'Lasar Segall'],
+        correctAnswer: 'Tarsila do Amaral',
+        explanation: 'Tarsila do Amaral foi a principal pintora do modernismo brasileiro. Seu quadro "Abaporu" (1928) inspirou o Movimento Antropofágico de Oswald de Andrade.' },
+      // l-5-4 challenges
+      { id: 'c-5-4-1', lessonId: 'l-5-4', type: 'TIMELINE' as const,
+        content: 'O que foi o "Milagre Econômico" brasileiro?',
+        options: ['Período de crescimento de 10% ao ano entre 1969-1973', 'Descoberta de petróleo no Brasil em 1970', 'Criação do Plano Real em 1994', 'Industrialização de Vargas nos anos 1940'],
+        correctAnswer: 'Período de crescimento de 10% ao ano entre 1969-1973',
+        explanation: 'O "Milagre Econômico" (1969-1973) foi um período de crescimento acelerado sob a ditadura militar, impulsionado por empréstimos externos e repressão aos trabalhadores.' },
+      { id: 'c-5-4-2', lessonId: 'l-5-4', type: 'WHO_AM_I' as const,
+        content: 'Fui a maior guerrilha armada contra a ditadura militar brasileira, nos anos 1972-1974. Operei no interior do Pará e fui completamente exterminada pelo Exército. O que fui eu?',
+        options: ['Guerrilha do Araguaia', 'MR-8', 'ALN de Carlos Marighella', 'VPR de Carlos Lamarca'],
+        correctAnswer: 'Guerrilha do Araguaia',
+        explanation: 'A Guerrilha do Araguaia (1972-1974) foi organizada pelo PCdoB. Cerca de 70 guerrilheiros foram mortos pelo Exército, muitos com corpos nunca encontrados.' },
+      // l-5-5 challenges
+      { id: 'c-5-5-1', lessonId: 'l-5-5', type: 'WHO_AM_I' as const,
+        content: 'Sou o plano econômico lançado em 1994 que criou o Real e acabou com a hiperinflação brasileira. Fui criado pelo então ministro da Fazenda Fernando Henrique Cardoso. O que sou eu?',
+        options: ['Plano Real', 'Plano Collor', 'Plano Cruzado', 'Plano Bresser'],
+        correctAnswer: 'Plano Real',
+        explanation: 'O Plano Real (1994) criou a moeda Real, ancorada ao dólar, e controlou a hiperinflação que chegou a 2.477% em 1993.' },
+      { id: 'c-5-5-2', lessonId: 'l-5-5', type: 'DECISION_SCENARIO' as const,
+        content: 'Você é brasileiro em 1992. O presidente Collor é acusado de corrupção. O movimento dos "caras-pintadas" pede seu impeachment. O que você faz?',
+        options: ['Saio às ruas com o rosto pintado pedindo impeachment', 'Fico em casa, não confio em nenhum político', 'Defendo Collor pois foi eleito democraticamente', 'Peço novas eleições diretas'],
+        correctAnswer: 'Saio às ruas com o rosto pintado pedindo impeachment',
+        explanation: 'O movimento dos "caras-pintadas" de 1992 foi uma das maiores mobilizações da história do Brasil, levando ao impeachment de Collor — o primeiro da história brasileira.' },
     ];
 
     for (const c of challengesData) {

@@ -1,7 +1,6 @@
 import { Link, useRoute } from "wouter"
 import { Map, Trophy, User, Book, LogOut } from "lucide-react"
 import { useAuth } from "../../lib/AuthContext"
-import { HeaderStats } from "./HeaderStats"
 
 const NAV = [
   { href: "/", icon: Map, label: "Jornada" },
@@ -67,10 +66,6 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Mobile: stats chip */}
-      <div className="lg:hidden flex items-center">
-        <HeaderStats />
-      </div>
     </nav>
   )
 }

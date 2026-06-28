@@ -6,6 +6,7 @@ import { Quiz } from "./pages/Quiz"
 import { Auth } from "./pages/Auth"
 import { Leaderboard } from "./pages/Leaderboard"
 import { Profile } from "./pages/Profile"
+import { Wiki } from "./pages/Wiki"
 import { motion } from "framer-motion"
 
 function ServerDownScreen() {
@@ -76,9 +77,7 @@ function AppRoutes() {
             <Route path="/" component={Home} />
             <Route path="/leaderboard" component={Leaderboard} />
             <Route path="/profile" component={Profile} />
-            <Route path="/wiki">
-              <div className="text-center text-white p-10 font-bold text-2xl">Wiki em construção...</div>
-            </Route>
+            <Route path="/wiki" component={Wiki} />
           </Switch>
         </AppLayout>
       </Route>

@@ -1,0 +1,110 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── Build backend ─────────────────────────────────────────────────
+      - name: Install backend deps
+        run: npm ci
+
+      - name: Build backend
+        run: npm run build
+
+      # ── Build frontend ────────────────────────────────────────────────
+      - name: Install frontend deps
+        run: cd histlingo-web && npm ci
+
+      - name: Build frontend
+        run: cd histlingo-web && npm run build
+
+      # ── Deploy via Python paramiko ────────────────────────────────────
+      - name: Install paramiko
+        run: pip install paramiko -q
+
+      - name: Upload and restart
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+        run: |
+          python3 << 'PYEOF'
+          import paramiko, os, sys, stat
+
+          host = '147.93.37.148'
+          port = 65002
+          user = 'u694432103'
+          pwd  = os.environ['SSH_PASS']
+
+          client = paramiko.SSHClient()
+          client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+          client.connect(host, port=port, username=user, password=pwd,
+                         timeout=30, auth_timeout=20, banner_timeout=20)
+          sftp = client.open_sftp()
+
+          def upload_dir(local_dir, remote_dir):
+              """Recursively upload a local directory to remote."""
+              # Ensure remote dir exists
+              try:
+                  sftp.stat(remote_dir)
+              except FileNotFoundError:
+                  sftp.mkdir(remote_dir)
+
+              for item in os.listdir(local_dir):
+                  local_path = os.path.join(local_dir, item)
+                  remote_path = remote_dir + '/' + item
+                  if os.path.isfile(local_path):
+                      print(f"  PUT {local_path} → {remote_path}")
+                      sftp.put(local_path, remote_path)
+                  elif os.path.isdir(local_path):
+                      upload_dir(local_path, remote_path)
+
+          # 1) Upload frontend dist → public_html (keep api/ intact)
+          print("=== Uploading frontend ===")
+          pub = '/home/u694432103/domains/grey-salamander-998398.hostingersite.com/public_html'
+          fe_dist = 'histlingo-web/dist'
+          for item in os.listdir(fe_dist):
+              local_path = os.path.join(fe_dist, item)
+              remote_path = pub + '/' + item
+              if os.path.isfile(local_path):
+                  print(f"  PUT {item}")
+                  sftp.put(local_path, remote_path)
+              elif os.path.isdir(local_path):
+                  upload_dir(local_path, remote_path)
+
+          # 2) Upload backend dist → ~/histlingo/dist
+          print("=== Uploading backend dist ===")
+          be_remote = '/home/u694432103/histlingo/dist'
+          upload_dir('dist', be_remote)
+
+          sftp.close()
+
+          # 3) Restart PM2
+          print("=== Restarting PM2 ===")
+          restart_cmd = (
+              'export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin; '
+              'export HOME=/home/u694432103; '
+              'pm2 restart histlingo || pm2 start /home/u694432103/histlingo/dist/main.js --name histlingo; '
+              'pm2 save'
+          )
+          _, out, err = client.exec_command(restart_cmd, timeout=60)
+          print("STDOUT:", out.read().decode())
+          stderr = err.read().decode()
+          if stderr:
+              print("STDERR:", stderr)
+
+          client.close()
+          print("=== Deploy complete ===")
+          PYEOF
