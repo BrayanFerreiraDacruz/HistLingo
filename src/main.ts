@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -11,7 +12,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: isProd
-      ? [process.env.FRONTEND_URL || '*']
+      ? process.env.FRONTEND_URL || '*'
       : ['http://localhost:5173', 'http://localhost:4173'],
     credentials: true,
   });
@@ -19,10 +20,15 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.setGlobalPrefix('api');
 
-  // Em produção serve o frontend React buildado
   if (isProd) {
-    app.useStaticAssets(join(__dirname, '..', 'public'));
-    app.setBaseViewsDir(join(__dirname, '..', 'public'));
+    const publicPath = join(__dirname, '..', 'public');
+    // Serve static assets (JS, CSS, images) from the public directory
+    app.useStaticAssets(publicPath);
+    // SPA fallback: serve index.html for all non-API routes
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.path.startsWith('/api')) return next();
+      res.sendFile(join(publicPath, 'index.html'));
+    });
   }
 
   await app.listen(process.env.PORT ?? 3000);
