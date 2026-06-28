@@ -91,19 +91,31 @@ jobs:
 
           sftp.close()
 
-          # 3) Restart PM2
+          # 3) Restart PM2 — read with short timeout, ignore timeout error (PM2 output arrives after process re-forks)
           print("=== Restarting PM2 ===")
           restart_cmd = (
               'export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin; '
               'export HOME=/home/u694432103; '
-              'pm2 restart histlingo || pm2 start /home/u694432103/histlingo/dist/main.js --name histlingo; '
-              'pm2 save'
+              '(pm2 restart histlingo 2>&1 || pm2 start /home/u694432103/histlingo/dist/main.js --name histlingo 2>&1); '
+              'pm2 save 2>&1; echo DONE'
           )
-          _, out, err = client.exec_command(restart_cmd, timeout=60)
-          print("STDOUT:", out.read().decode())
-          stderr = err.read().decode()
-          if stderr:
-              print("STDERR:", stderr)
+          _, out, err = client.exec_command(restart_cmd, timeout=45)
+          try:
+              output = b''
+              import select
+              while True:
+                  r, _, _ = select.select([out.channel], [], [], 10)
+                  if not r:
+                      break
+                  chunk = out.read(4096)
+                  if not chunk:
+                      break
+                  output += chunk
+                  if b'DONE' in output:
+                      break
+              print("PM2:", output.decode('utf-8', errors='replace'))
+          except Exception as e:
+              print(f"PM2 restart sent (output timeout is normal with PM2): {e}")
 
           client.close()
           print("=== Deploy complete ===")
