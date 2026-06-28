@@ -13,7 +13,6 @@ interface LessonBlock {
   type: BlockType
   title: string
   content: string
-  highlight?: string
   options?: string[]
   correctAnswer?: string
   explanation?: string
@@ -26,6 +25,15 @@ const TYPE_LABELS: Record<string, string> = {
   DECISION_SCENARIO: 'Decisão Histórica',
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
 function buildBlocks(lesson: Lesson, challenges: Challenge[]): LessonBlock[] {
   const theory: LessonBlock = {
     id: 'theory',
@@ -33,15 +41,20 @@ function buildBlocks(lesson: Lesson, challenges: Challenge[]): LessonBlock[] {
     title: lesson.title,
     content: lesson.content,
   }
-  const challengeBlocks: LessonBlock[] = challenges.map(c => ({
-    id: c.id,
-    type: c.type as BlockType,
-    title: TYPE_LABELS[c.type] || c.type,
-    content: c.content,
-    options: c.options || undefined,
-    correctAnswer: c.correctAnswer,
-    explanation: c.explanation || undefined,
-  }))
+  const challengeBlocks: LessonBlock[] = challenges
+    .filter(c => {
+      const opts = c.options as string[] | null | undefined
+      return Array.isArray(opts) && opts.length >= 2 && c.correctAnswer
+    })
+    .map(c => ({
+      id: c.id,
+      type: c.type as BlockType,
+      title: TYPE_LABELS[c.type] || c.type,
+      content: c.content,
+      options: shuffle(c.options as string[]),
+      correctAnswer: c.correctAnswer,
+      explanation: c.explanation || undefined,
+    }))
   return [theory, ...challengeBlocks]
 }
 
@@ -49,7 +62,7 @@ export function Quiz() {
   const params = useParams<{ lessonId: string }>()
   const lessonId = params.lessonId
   const [, setLocation] = useLocation()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
 
   const [blocks, setBlocks] = useState<LessonBlock[]>([])
   const [loading, setLoading] = useState(true)
@@ -84,8 +97,8 @@ export function Quiz() {
         <h1 className="text-4xl font-black text-white mb-2 tracking-tight">Lição completa!</h1>
         <p className="text-xl font-bold text-(--color-secondary) mb-8">+{xpGained} XP conquistados</p>
         <div className="flex gap-4">
-          <button className="btn-secondary" onClick={() => setLocation('/')}>MAPA</button>
-          <button className="btn-primary" onClick={() => { setLocation('/leaderboard') }}>VER LIGAS</button>
+          <button className="btn-base btn-secondary px-8 py-4" onClick={() => setLocation('/')}>MAPA</button>
+          <button className="btn-base btn-primary px-8 py-4" onClick={() => setLocation('/leaderboard')}>VER LIGAS</button>
         </div>
       </div>
     )
@@ -97,7 +110,7 @@ export function Quiz() {
         <div className="text-8xl mb-8 drop-shadow-lg">💔</div>
         <h1 className="text-4xl font-black text-white mb-4 tracking-tight">Vidas esgotadas!</h1>
         <p className="text-lg font-bold text-gray-400 mb-12">Você pode tentar novamente. Cada erro é um aprendizado!</p>
-        <button className="btn-primary w-full max-w-sm" onClick={() => setLocation('/')}>VOLTAR AO MAPA</button>
+        <button className="btn-base btn-primary w-full max-w-sm py-5" onClick={() => setLocation('/')}>VOLTAR AO MAPA</button>
       </div>
     )
   }
@@ -116,11 +129,13 @@ export function Quiz() {
       setIsChecking(false)
       setIsCorrect(null)
     } else {
-      // Lesson complete!
       confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 }, colors: ['#00A651', '#FFD700', '#003566', '#FFFFFF'] })
       if (user && lessonId) {
         users.completeLesson(user.id, lessonId)
-          .then(res => { setXpGained(res.xpGained) })
+          .then(async res => {
+            setXpGained(res.xpGained)
+            await refreshUser()
+          })
           .catch(() => {})
           .finally(() => setShowVictory(true))
       } else {
@@ -137,7 +152,6 @@ export function Quiz() {
       setIsCorrect(correct)
       setIsChecking(true)
       if (!correct) setHearts(p => Math.max(0, p - 1))
-      // Record answer XP
       if (user) {
         users.submitAnswer(user.id, block.id, correct ? 5 : 2).catch(() => {})
       }
@@ -192,7 +206,7 @@ export function Quiz() {
                     </div>
                   </div>
                 )}
-                {(block.type === 'DECISION_SCENARIO') && (
+                {block.type === 'DECISION_SCENARIO' && (
                   <div className="bg-(--color-accent)/20 border-2 border-(--color-accent) p-8 rounded-[2rem] text-xl font-bold text-white leading-relaxed mb-12 shadow-neo-accent w-full">
                     <p className="m-0 italic">"{block.content}"</p>
                   </div>
@@ -208,7 +222,9 @@ export function Quiz() {
                       let cls = 'bg-(--color-card) border-(--color-border) text-white shadow-neo-card hover:bg-white/5'
                       const isSelected = selectedOption === opt
                       if (isChecking && isSelected) {
-                        cls = isCorrect ? 'bg-(--color-primary)/20 border-(--color-primary) text-(--color-primary) shadow-neo-primary' : 'bg-(--color-destructive)/20 border-(--color-destructive) text-(--color-destructive) shadow-neo-destructive'
+                        cls = isCorrect
+                          ? 'bg-(--color-primary)/20 border-(--color-primary) text-(--color-primary) shadow-neo-primary'
+                          : 'bg-(--color-destructive)/20 border-(--color-destructive) text-(--color-destructive) shadow-neo-destructive'
                       } else if (isChecking && opt === block.correctAnswer) {
                         cls = 'border-(--color-primary) bg-(--color-background) shadow-neo-primary'
                       } else if (isSelected && !isChecking) {
@@ -219,7 +235,7 @@ export function Quiz() {
                           className={`group relative p-5 rounded-2xl text-left text-lg md:text-xl font-black border-2 transition-all duration-150 active:translate-y-1 active:shadow-none outline-none ${cls}`}
                           onClick={() => handleSelect(opt)}>
                           <div className="flex items-center gap-4">
-                            <span className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center text-sm font-black ${isSelected ? 'bg-current text-white' : 'text-gray-500 border-(--color-border) group-hover:border-gray-500'}`}>{i + 1}</span>
+                            <span className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center text-sm font-black shrink-0 ${isSelected ? 'bg-current text-white' : 'text-gray-500 border-(--color-border) group-hover:border-gray-500'}`}>{i + 1}</span>
                             <span className="flex-1">{opt}</span>
                           </div>
                         </button>
@@ -257,7 +273,7 @@ export function Quiz() {
         <div className={`relative z-20 p-8 border-t-2 bg-(--color-background) transition-colors duration-300 ${!isTheory && isChecking ? (isCorrect ? 'bg-(--color-primary-dark) border-transparent' : 'bg-(--color-destructive-dark) border-transparent') : 'border-(--color-border)'}`}>
           <div className="max-w-[640px] mx-auto">
             <button
-              className={`w-full py-5 text-xl tracking-widest ${isTheory ? 'btn-secondary' : (!selectedOption && !isChecking ? 'btn-disabled' : isChecking ? (isCorrect ? 'btn-primary border-white/20' : 'btn-danger border-white/20') : 'btn-secondary')}`}
+              className={`btn-base w-full py-5 text-xl tracking-widest ${isTheory ? 'btn-secondary' : (!selectedOption && !isChecking ? 'btn-disabled' : isChecking ? (isCorrect ? 'btn-primary border-white/20' : 'btn-danger border-white/20') : 'btn-secondary')}`}
               onClick={handleAction}
               disabled={!isTheory && !selectedOption && !isChecking}>
               <div className="flex items-center justify-center gap-3">
