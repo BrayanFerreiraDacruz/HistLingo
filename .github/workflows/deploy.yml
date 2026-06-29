@@ -1,4 +1,4 @@
-name: Deploy to Hostinger
+name: Deploy Backend to Hostinger
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
@@ -20,9 +20,6 @@ jobs:
 
       - name: Build backend
         run: npm ci && npm run build
-
-      - name: Build frontend
-        run: cd histlingo-web && npm ci && npm run build
 
       - name: Install paramiko
         run: pip install paramiko -q
@@ -41,25 +38,24 @@ jobs:
           PWD    = os.environ['SSH_PASS']
           BE     = f'/home/{USER}/histlingo'
           DOMAIN = 'goldenrod-whale-887048.hostingersite.com'
-          PUB    = f'/home/{USER}/domains/{DOMAIN}/public_html'
-          NODE_PATH = '/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin'
-          ENV_PREFIX = f'export PATH={NODE_PATH}; export HOME=/home/{USER}; '
+          NODE   = '/opt/alt/alt-nodejs20/root/usr/bin'
+          PPATH  = f'{NODE}:/home/{USER}/local/bin:/usr/local/bin:/usr/bin:/bin'
+          PREFIX = f'export PATH={PPATH}; export HOME=/home/{USER}; '
 
           client = paramiko.SSHClient()
           client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-          client.connect(HOST, port=PORT, username=USER, password=PWD,
-                         timeout=30, auth_timeout=20, banner_timeout=20)
+          client.connect(HOST, port=PORT, username=USER, password=PWD, timeout=30)
           sftp = client.open_sftp()
 
-          def ssh(cmd, timeout=20):
-              _, o, e = client.exec_command(ENV_PREFIX + cmd, timeout=timeout)
+          def ssh(cmd, timeout=25):
+              _, o, e = client.exec_command(PREFIX + cmd, timeout=timeout)
               return (o.read() + e.read()).decode('utf-8', errors='replace')
 
-          def ssh_wait(cmd, sentinel='__DONE__', timeout=45):
-              _, o, _ = client.exec_command(ENV_PREFIX + cmd + f'; echo {sentinel}', timeout=timeout)
+          def ssh_wait(cmd, sentinel='__OK__', timeout=50):
+              _, o, _ = client.exec_command(PREFIX + cmd + f'; echo {sentinel}', timeout=timeout)
               buf = b''
-              for _ in range(timeout * 2):
-                  r, _, _ = sel.select([o.channel], [], [], 0.5)
+              for _ in range(timeout * 4):
+                  r, _, _ = sel.select([o.channel], [], [], 0.25)
                   if r:
                       buf += o.read(4096)
                       if sentinel.encode() in buf: break
@@ -80,75 +76,87 @@ jobs:
               for item in os.listdir(local_dir):
                   lp = os.path.join(local_dir, item)
                   rp = remote_dir + '/' + item
-                  if os.path.isfile(lp):
-                      sftp.put(lp, rp)
-                  elif os.path.isdir(lp):
-                      upload_dir(lp, rp)
+                  if os.path.isfile(lp): sftp.put(lp, rp)
+                  elif os.path.isdir(lp): upload_dir(lp, rp)
 
-          # ── 1) Preserve .env ──────────────────────────────────────────
-          print("=== Reading .env ===")
+          # ── 1) Ler .env existente ─────────────────────────────────────
+          print("=== Lendo .env ===")
           existing = ssh(f'cat {BE}/.env 2>/dev/null || echo ""')
-          db_url = ''
-          jwt_secret = 'histlingo-jwt-secret-2024'
+          db_url, jwt_secret = '', 'histlingo-jwt-secret-2024'
           for line in existing.splitlines():
               line = line.strip()
               if line.startswith('DATABASE_URL='): db_url = line[len('DATABASE_URL='):]
-              if line.startswith('JWT_SECRET='): jwt_secret = line[len('JWT_SECRET='):]
-          print(f"DATABASE_URL: {'found' if db_url else 'NOT FOUND — login will fail!'}")
+              if line.startswith('JWT_SECRET='):   jwt_secret = line[len('JWT_SECRET='):]
+          print(f"DATABASE_URL: {'OK' if db_url else 'VAZIO — ERRO!'}")
 
-          # ── 2) Write .env ─────────────────────────────────────────────
-          env_content = (
-              f"NODE_ENV=production\n"
-              f"PORT=3000\n"
-              f"FRONTEND_URL=https://{DOMAIN}\n"
-              f"JWT_SECRET={jwt_secret}\n"
-              f"DATABASE_URL={db_url}\n"
+          # ── 2) Escrever .env ──────────────────────────────────────────
+          env_txt = (
+              f'NODE_ENV=production\n'
+              f'PORT=3000\n'
+              f'FRONTEND_URL=https://{DOMAIN}\n'
+              f'JWT_SECRET={jwt_secret}\n'
+              f'DATABASE_URL={db_url}\n'
           )
-          sftp.putfo(io.BytesIO(env_content.encode()), f'{BE}/.env')
-          print("  .env updated")
+          sftp.putfo(io.BytesIO(env_txt.encode()), f'{BE}/.env')
 
-          # ── 3) Upload backend ─────────────────────────────────────────
-          print("=== Uploading backend ===")
+          # ── 3) Criar ecosystem.config.js (PM2 com envs embutidas) ─────
+          # Isso garante que o PM2 sempre tem as variáveis corretas,
+          # independente do diretório onde ele é iniciado.
+          ecosystem = f"""module.exports = {{
+  apps: [{{
+    name: 'histlingo',
+    script: '{BE}/dist/main.js',
+    cwd: '{BE}',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '200M',
+    env: {{
+      NODE_ENV: 'production',
+      PORT: '3000',
+      DATABASE_URL: '{db_url}',
+      JWT_SECRET: '{jwt_secret}',
+      FRONTEND_URL: 'https://{DOMAIN}',
+    }}
+  }}]
+}};
+"""
+          sftp.putfo(io.BytesIO(ecosystem.encode()), f'{BE}/ecosystem.config.js')
+          print("  ecosystem.config.js criado com envs embutidas")
+
+          # ── 4) Upload backend dist ────────────────────────────────────
+          print("=== Subindo backend ===")
           upload_dir('dist', f'{BE}/dist')
-
-          # ── 4) Upload frontend ────────────────────────────────────────
-          print("=== Uploading frontend ===")
-          fe_src = 'histlingo-web/dist'
-          for item in os.listdir(fe_src):
-              lp = os.path.join(fe_src, item)
-              rp = PUB + '/' + item
-              if os.path.isfile(lp):
-                  sftp.put(lp, rp)
-              elif os.path.isdir(lp):
-                  upload_dir(lp, rp)
 
           sftp.close()
 
-          # ── 5) Restart PM2 ────────────────────────────────────────────
-          print("=== Restarting PM2 ===")
+          # ── 5) Reiniciar PM2 via ecosystem ────────────────────────────
+          print("=== Reiniciando PM2 via ecosystem ===")
           r = ssh_wait(
-              f'cd {BE} && (pm2 restart histlingo 2>&1 || pm2 start {BE}/dist/main.js --name histlingo 2>&1); pm2 save 2>&1',
-              timeout=45
+              f'cd {BE} && pm2 stop histlingo 2>/dev/null; pm2 delete histlingo 2>/dev/null; '
+              f'pm2 start {BE}/ecosystem.config.js; pm2 save',
+              timeout=50
           )
-          print("PM2:", r[:400])
+          print("PM2:", r[:500])
 
-          # ── 6) Health check ───────────────────────────────────────────
-          time.sleep(8)
-          logs = ssh(
-              f'pm2 logs histlingo --lines 20 --nostream 2>&1; echo "---"; '
-              f'curl -s -o /dev/null -w "health=%{{http_code}}" --max-time 5 http://127.0.0.1:3000/api/health'
+          # ── 6) Aguardar + checar saúde ────────────────────────────────
+          time.sleep(10)
+          out = ssh(
+              f'pm2 logs histlingo --lines 30 --nostream 2>&1; '
+              f'echo "===HEALTH==="; '
+              f'curl -s -w "\\n%{{http_code}}" --max-time 8 http://127.0.0.1:3000/api/health'
           )
-          print("Logs:\n", logs)
+          print("Logs + health:\n", out[-1500:])
 
-          # ── 7) 1-minute crontab ───────────────────────────────────────
+          # ── 7) Crontab de recuperação ─────────────────────────────────
           cron = (
-              f'* * * * * export PATH={NODE_PATH}; export HOME=/home/{USER}; '
-              f'pm2 list 2>/dev/null | grep -q histlingo || '
-              f'(cd {BE} && pm2 start {BE}/dist/main.js --name histlingo 2>&1; pm2 save 2>&1) '
+              f'*/2 * * * * export PATH={PPATH}; export HOME=/home/{USER}; '
+              f'pm2 list 2>/dev/null | grep -q "histlingo.*online" || '
+              f'(cd {BE} && pm2 start {BE}/ecosystem.config.js 2>&1; pm2 save 2>&1) '
               f'>> {BE}/cron.log 2>&1'
           )
           ssh(f"(crontab -l 2>/dev/null | grep -v histlingo; echo '{cron}') | crontab -")
-          print("Crontab OK")
+          print("Crontab a cada 2min configurado")
 
           client.close()
           print(f"=== Deploy concluido: https://{DOMAIN} ===")
