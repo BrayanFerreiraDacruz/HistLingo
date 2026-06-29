@@ -1,16 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { UserReview } from '@prisma/client';
+
+interface ReviewData {
+  easeFactor?: number;
+  interval?: number;
+  repetitions?: number;
+}
 
 @Injectable()
 export class SrsService {
-  /**
-   * Implementação do algoritmo SM-2 para cálculo do próximo intervalo de revisão.
-   * @param review O registro de revisão atual.
-   * @param quality A qualidade da resposta (0-5).
-   * @returns Dados atualizados para a revisão.
-   */
   calculateNextReview(
-    review: Partial<UserReview>,
+    review: ReviewData,
     quality: number,
   ): {
     easeFactor: number;
@@ -27,7 +26,6 @@ export class SrsService {
     let repetitions = review.repetitions ?? 0;
 
     if (quality < 3) {
-      // Se a resposta for ruim, reinicia as repetições
       repetitions = 0;
       interval = 1;
     } else {
@@ -41,9 +39,7 @@ export class SrsService {
       repetitions++;
     }
 
-    // Cálculo do novo Ease Factor: EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-    easeFactor =
-      easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    easeFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
     if (easeFactor < 1.3) {
       easeFactor = 1.3;
     }
@@ -51,11 +47,6 @@ export class SrsService {
     const nextReviewDate = new Date();
     nextReviewDate.setDate(nextReviewDate.getDate() + interval);
 
-    return {
-      easeFactor,
-      interval,
-      repetitions,
-      nextReviewDate,
-    };
+    return { easeFactor, interval, repetitions, nextReviewDate };
   }
 }

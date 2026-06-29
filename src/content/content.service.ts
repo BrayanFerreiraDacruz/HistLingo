@@ -424,18 +424,56 @@ export class ContentService implements OnModuleInit {
   }
 
   async getModules() {
-    return this.prisma.module.findMany({ orderBy: { order: 'asc' }, include: { lessons: true } });
+    const [rows] = await this.prisma.pool.execute(`
+      SELECT m.id as moduleId, m.title as moduleTitle, m.description as moduleDescription, m.\`order\` as moduleOrder,
+             l.id as lessonId, l.title as lessonTitle, l.content as lessonContent,
+             l.xp_reward as lessonXpReward, l.\`order\` as lessonOrder, l.module_id as lessonModuleId
+      FROM modules m
+      LEFT JOIN lessons l ON l.module_id = m.id
+      ORDER BY m.\`order\` ASC, l.\`order\` ASC
+    `) as any[];
+    const moduleMap = new Map<string, any>();
+    for (const row of rows as any[]) {
+      if (!moduleMap.has(row.moduleId)) {
+        moduleMap.set(row.moduleId, {
+          id: row.moduleId, title: row.moduleTitle, description: row.moduleDescription,
+          order: row.moduleOrder, lessons: [],
+        });
+      }
+      if (row.lessonId) {
+        moduleMap.get(row.moduleId).lessons.push({
+          id: row.lessonId, title: row.lessonTitle, content: row.lessonContent,
+          xpReward: row.lessonXpReward, order: row.lessonOrder, moduleId: row.lessonModuleId,
+        });
+      }
+    }
+    return [...moduleMap.values()];
   }
 
   async getLessonsByModule(moduleId: string) {
-    return this.prisma.lesson.findMany({ where: { moduleId }, orderBy: { order: 'asc' } });
+    const [rows] = await this.prisma.pool.execute(
+      'SELECT id, title, content, xp_reward as xpReward, `order`, module_id as moduleId FROM lessons WHERE module_id = ? ORDER BY `order` ASC',
+      [moduleId]
+    ) as any[];
+    return rows as any[];
   }
 
   async getLessonById(lessonId: string) {
-    return this.prisma.lesson.findUnique({ where: { id: lessonId } });
+    const [rows] = await this.prisma.pool.execute(
+      'SELECT id, title, content, xp_reward as xpReward, `order`, module_id as moduleId FROM lessons WHERE id = ? LIMIT 1',
+      [lessonId]
+    ) as any[];
+    return (rows as any[])[0] ?? null;
   }
 
   async getChallengesByLesson(lessonId: string) {
-    return this.prisma.challenge.findMany({ where: { lessonId } });
+    const [rows] = await this.prisma.pool.execute(
+      'SELECT id, lesson_id as lessonId, type, content, options, correct_answer as correctAnswer, explanation, difficulty_weight as difficultyWeight FROM challenges WHERE lesson_id = ?',
+      [lessonId]
+    ) as any[];
+    return (rows as any[]).map(r => ({
+      ...r,
+      options: typeof r.options === 'string' ? JSON.parse(r.options) : r.options,
+    }));
   }
 }

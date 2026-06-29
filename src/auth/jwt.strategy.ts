@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private prisma: PrismaService) {
+  constructor(private db: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -14,7 +14,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: { sub: string; email: string }) {
-    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    const user = await this.db.queryOne<{ id: string; email: string; username: string; role: string }>(
+      'SELECT id, email, username, role FROM users WHERE id = ? LIMIT 1',
+      [payload.sub]
+    );
     if (!user) throw new UnauthorizedException();
     return { id: user.id, email: user.email, username: user.username, role: user.role };
   }

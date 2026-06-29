@@ -10,78 +10,79 @@ import { LoginDto } from './dto/login.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    private db: PrismaService,
     private jwt: JwtService,
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findFirst({
-      where: { OR: [{ email: dto.email }, { username: dto.username }] },
-    });
+    const existing = await this.db.queryOne(
+      'SELECT id FROM users WHERE email = ? OR username = ? LIMIT 1',
+      [dto.email, dto.username]
+    );
     if (existing) throw new ConflictException('Email ou nome de usuário já em uso.');
 
     const hashed = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({
-      data: { username: dto.username, email: dto.email, password: hashed },
-    });
-
-    return this.signToken(user.id, user.email);
+    const id = crypto.randomUUID();
+    await this.db.run(
+      `INSERT INTO users (id, username, email, password, role, xp_total, level, streak_count, recovery_freeze_count, avatar_emoji, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'STUDENT', 0, 1, 0, 0, '🦊', NOW(), NOW())`,
+      [id, dto.username, dto.email, hashed]
+    );
+    return this.signToken(id, dto.email);
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.db.queryOne<{ id: string; email: string; password: string }>(
+      'SELECT id, email, password FROM users WHERE email = ? LIMIT 1',
+      [dto.email]
+    );
     if (!user) throw new UnauthorizedException('Credenciais inválidas.');
-
     const valid = await bcrypt.compare(dto.password, user.password);
     if (!valid) throw new UnauthorizedException('Credenciais inválidas.');
-
     return this.signToken(user.id, user.email);
   }
 
   async getMe(userId: string) {
-    return this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true, username: true, email: true, role: true,
-        xpTotal: true, level: true, streakCount: true,
-        lastActivityDate: true, createdAt: true, avatarEmoji: true,
-      },
-    });
+    return this.db.queryOne(
+      `SELECT id, username, email, role, xp_total as xpTotal, level, streak_count as streakCount,
+              last_activity_date as lastActivityDate, created_at as createdAt, avatar_emoji as avatarEmoji
+       FROM users WHERE id = ? LIMIT 1`,
+      [userId]
+    );
   }
 
   async forgotPassword(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.db.queryOne<{ id: string; username: string; email: string }>(
+      'SELECT id, username, email FROM users WHERE email = ? LIMIT 1',
+      [email]
+    );
     if (!user) return { message: 'Se o email existir, você receberá as instruções em breve.' };
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 3600000); // 1 hora
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { passwordResetToken: token, passwordResetExpires: expires },
-    });
+    const expires = new Date(Date.now() + 3600000);
+    await this.db.run(
+      'UPDATE users SET password_reset_token = ?, password_reset_expires = ?, updated_at = NOW() WHERE id = ?',
+      [token, expires, user.id]
+    );
 
     const baseUrl = process.env.FRONTEND_URL || 'https://grey-salamander-998398.hostingersite.com';
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
-
     await this.sendResetEmail(user.email, user.username, resetUrl);
-
     return { message: 'Se o email existir, você receberá as instruções em breve.' };
   }
 
   async resetPassword(token: string, newPassword: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { passwordResetToken: token, passwordResetExpires: { gt: new Date() } },
-    });
-
+    const user = await this.db.queryOne<{ id: string }>(
+      'SELECT id FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW() LIMIT 1',
+      [token]
+    );
     if (!user) throw new BadRequestException('Link de recuperação inválido ou expirado. Solicite um novo.');
 
     const hashed = await bcrypt.hash(newPassword, 10);
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { password: hashed, passwordResetToken: null, passwordResetExpires: null },
-    });
-
+    await this.db.run(
+      'UPDATE users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL, updated_at = NOW() WHERE id = ?',
+      [hashed, user.id]
+    );
     return { message: 'Senha atualizada com sucesso! Faça login.' };
   }
 
@@ -115,7 +116,6 @@ export class AuthService {
   }
 
   private signToken(userId: string, email: string) {
-    const payload = { sub: userId, email };
-    return { access_token: this.jwt.sign(payload) };
+    return { access_token: this.jwt.sign({ sub: userId, email }) };
   }
 }

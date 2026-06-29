@@ -117,6 +117,27 @@ jobs:
           except Exception as e:
               print(f"PM2 restart sent (output timeout is normal with PM2): {e}")
 
+          # 4) Install server-side crontab (1-minute recovery — survives PM2 crashes)
+          print("=== Installing crontab ===")
+          cron_line = (
+              '* * * * * '
+              'export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin; '
+              'export HOME=/home/u694432103; '
+              'pm2 list 2>/dev/null | grep -q histlingo || '
+              '(pm2 start /home/u694432103/histlingo/dist/main.js --name histlingo 2>&1; pm2 save 2>&1) '
+              '>> /home/u694432103/histlingo/cron.log 2>&1'
+          )
+          cron_cmd = f'(crontab -l 2>/dev/null | grep -v "histlingo"; echo \'{cron_line}\') | crontab -; echo CRON_DONE'
+          _, cout, _ = client.exec_command(cron_cmd, timeout=15)
+          import select as sel
+          cbuf = b''
+          for _ in range(30):
+              r, _, _ = sel.select([cout.channel], [], [], 1)
+              if r:
+                  cbuf += cout.read(1024)
+                  if b'CRON_DONE' in cbuf: break
+          print("Crontab:", cbuf.decode('utf-8', errors='replace').strip() or 'set')
+
           client.close()
           print("=== Deploy complete ===")
           PYEOF

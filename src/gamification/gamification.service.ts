@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class GamificationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private db: PrismaService) {}
 
   calculateXPGain(baseXP: number, difficultyWeight: number, currentStreak: number): number {
     const bonusStreak = Math.floor(currentStreak / 5);
@@ -11,80 +11,43 @@ export class GamificationService {
   }
 
   async updateStreak(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.db.queryOne<{
+      id: string; streak_count: number; last_activity_date: Date | null; recovery_freeze_count: number;
+    }>('SELECT id, streak_count, last_activity_date, recovery_freeze_count FROM users WHERE id = ? LIMIT 1', [userId]);
 
-    if (!user) {
-      throw new Error('User not found');
-    }
-
+    if (!user) throw new Error('User not found');
     const now = new Date();
-    const lastActivity = user.lastActivityDate;
 
-    if (!lastActivity) {
-      return this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          streakCount: 1,
-          lastActivityDate: now,
-        },
-      });
+    if (!user.last_activity_date) {
+      await this.db.run('UPDATE users SET streak_count = 1, last_activity_date = ?, updated_at = NOW() WHERE id = ?', [now, userId]);
+      return;
     }
 
-    const diffInHours = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
+    const diffHours = (now.getTime() - new Date(user.last_activity_date).getTime()) / 3600000;
 
-    if (diffInHours > 48) {
-      // Perdeu a ofensiva
-      if (user.recoveryFreezeCount > 0) {
-        return this.prisma.user.update({
-          where: { id: userId },
-          data: {
-            recoveryFreezeCount: user.recoveryFreezeCount - 1,
-            lastActivityDate: now,
-          },
-        });
+    if (diffHours > 48) {
+      if (user.recovery_freeze_count > 0) {
+        await this.db.run(
+          'UPDATE users SET recovery_freeze_count = recovery_freeze_count - 1, last_activity_date = ?, updated_at = NOW() WHERE id = ?',
+          [now, userId]
+        );
+      } else {
+        await this.db.run('UPDATE users SET streak_count = 1, last_activity_date = ?, updated_at = NOW() WHERE id = ?', [now, userId]);
       }
-      return this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          streakCount: 1,
-          lastActivityDate: now,
-        },
-      });
-    } else if (diffInHours > 24) {
-      // Incrementa ofensiva
-      return this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          streakCount: user.streakCount + 1,
-          lastActivityDate: now,
-        },
-      });
+    } else if (diffHours > 24) {
+      await this.db.run(
+        'UPDATE users SET streak_count = streak_count + 1, last_activity_date = ?, updated_at = NOW() WHERE id = ?',
+        [now, userId]
+      );
+    } else {
+      await this.db.run('UPDATE users SET last_activity_date = ?, updated_at = NOW() WHERE id = ?', [now, userId]);
     }
-
-    // Já fez atividade hoje ou menos de 24h atrás
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        lastActivityDate: now,
-      },
-    });
   }
 
   async addXP(userId: string, xp: number) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new Error('User not found');
-
-    const newXPTotal = user.xpTotal + xp;
-    const newLevel = Math.floor(newXPTotal / 100) + 1; // Exemplo simples de nível: cada 100 XP sobe um nível
-
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        xpTotal: newXPTotal,
-        level: newLevel,
-      },
-    });
+    await this.db.run(
+      'UPDATE users SET xp_total = xp_total + ?, level = FLOOR((xp_total + ?) / 100) + 1, updated_at = NOW() WHERE id = ?',
+      [xp, xp, userId]
+    );
   }
 }
