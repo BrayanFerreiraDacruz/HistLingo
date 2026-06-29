@@ -32,22 +32,29 @@ jobs:
           target: /home/u694432103/histlingo/
           strip_components: 0
 
-      - name: Restart PM2
+      - name: Restart PM2 + crontab
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 147.93.37.148
           port: 65002
           username: u694432103
           password: ${{ secrets.SSH_PASS }}
-          command_timeout: 60s
+          command_timeout: 90s
           script: |
             export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin
             export HOME=/home/u694432103
             cd /home/u694432103/histlingo
+
             pm2 stop histlingo 2>/dev/null || true
             pm2 delete histlingo 2>/dev/null || true
             pm2 start ecosystem.config.js
             pm2 save
+
             sleep 8
             curl -sf http://127.0.0.1:3000/api/health && echo "HEALTH OK" || echo "HEALTH FAIL"
-            pm2 logs histlingo --lines 15 --nostream
+            pm2 logs histlingo --lines 10 --nostream
+
+            NPATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin
+            CRON="*/2 * * * * export PATH=$NPATH; export HOME=/home/u694432103; pm2 list 2>/dev/null | grep -q 'histlingo.*online' || (cd /home/u694432103/histlingo && pm2 start ecosystem.config.js 2>&1; pm2 save 2>&1) >> /home/u694432103/histlingo/cron.log 2>&1"
+            (crontab -l 2>/dev/null | grep -v histlingo; echo "$CRON") | crontab -
+            echo "Crontab configurado"
