@@ -424,14 +424,14 @@ export class ContentService implements OnModuleInit {
   }
 
   async getModules() {
-    const [rows] = await this.prisma.pool.query(`
+    const rows = await this.prisma.query(`
       SELECT m.id as moduleId, m.title as moduleTitle, m.description as moduleDescription, m.\`order\` as moduleOrder,
              l.id as lessonId, l.title as lessonTitle, l.content as lessonContent,
              l.xp_reward as lessonXpReward, l.\`order\` as lessonOrder, l.module_id as lessonModuleId
       FROM modules m
       LEFT JOIN lessons l ON l.module_id = m.id
       ORDER BY m.\`order\` ASC, l.\`order\` ASC
-    `) as any[];
+    `);
     const moduleMap = new Map<string, any>();
     for (const row of rows as any[]) {
       if (!moduleMap.has(row.moduleId)) {
@@ -451,27 +451,25 @@ export class ContentService implements OnModuleInit {
   }
 
   async getLessonsByModule(moduleId: string) {
-    const [rows] = await this.prisma.pool.query(
+    return this.prisma.query(
       'SELECT id, title, content, xp_reward as xpReward, `order`, module_id as moduleId FROM lessons WHERE module_id = ? ORDER BY `order` ASC',
       [moduleId]
-    ) as any[];
-    return rows as any[];
+    );
   }
 
   async getLessonById(lessonId: string) {
-    const [rows] = await this.prisma.pool.query(
+    return this.prisma.queryOne(
       'SELECT id, title, content, xp_reward as xpReward, `order`, module_id as moduleId FROM lessons WHERE id = ? LIMIT 1',
       [lessonId]
-    ) as any[];
-    return (rows as any[])[0] ?? null;
+    );
   }
 
   async getChallengesByLesson(lessonId: string) {
-    const [rows] = await this.prisma.pool.query(
+    const rows = await this.prisma.query(
       'SELECT id, lesson_id as lessonId, type, content, options, correct_answer as correctAnswer, explanation, difficulty_weight as difficultyWeight FROM challenges WHERE lesson_id = ?',
       [lessonId]
-    ) as any[];
-    return (rows as any[]).map(r => ({
+    );
+    return rows.map((r: any) => ({
       ...r,
       options: typeof r.options === 'string' ? JSON.parse(r.options) : r.options,
     }));
