@@ -1,16 +1,44 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { createPool } from 'mysql2/promise';
+import type { Pool } from 'mysql2/promise';
 
 @Injectable()
 export class ContentService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
   async onModuleInit() {
-    const count = await this.prisma.lesson.count();
-    if (count < 30) await this.seedContent();
+    let pool: Pool | null = null;
+    try {
+      pool = createPool(this.mysqlConfig());
+      const [rows] = await pool.query('SELECT COUNT(*) as cnt FROM lessons') as any[];
+      const count = Number(rows[0].cnt);
+      if (count < 30) await this.seedContent(pool);
+    } catch (err) {
+      console.error('[Seed] Failed (non-fatal):', err instanceof Error ? err.message : String(err));
+    } finally {
+      if (pool) await pool.end().catch(() => {});
+    }
   }
 
-  private async seedContent() {
+  private mysqlConfig() {
+    try {
+      const u = new URL(process.env.DATABASE_URL ?? 'mysql://localhost/histlingo');
+      return {
+        host: u.hostname,
+        port: Number(u.port) || 3306,
+        user: decodeURIComponent(u.username || ''),
+        password: decodeURIComponent(u.password || ''),
+        database: u.pathname.replace(/^\//, ''),
+        waitForConnections: true,
+        connectionLimit: 3,
+      };
+    } catch {
+      return { host: '127.0.0.1', port: 3306, user: '', password: '', database: '' };
+    }
+  }
+
+  private async seedContent(pool: Pool) {
     const modulesData = [
       { order: 1, title: 'Raízes Profundas', description: 'Povos Originários: Cultura indígena antes de 1500, troncos linguísticos, organização social e mitologias.' },
       { order: 2, title: 'O Encontro e o Choque', description: 'Período Colonial Inicial: Chegada dos portugueses, ciclos econômicos (pau-brasil, açúcar) e resistência indígena/africana.' },
@@ -19,14 +47,17 @@ export class ContentService implements OnModuleInit {
       { order: 5, title: 'Tempos Modernos', description: 'Ditadura e Redemocratização: O golpe de 64, movimentos de resistência, Diretas Já e a Constituição de 88.' },
     ];
 
-    const modules: Record<number, { id: string }> = {};
-    for (const modData of modulesData) {
-      modules[modData.order] = await this.prisma.module.upsert({
-        where: { order: modData.order },
-        update: { title: modData.title, description: modData.description },
-        create: { title: modData.title, description: modData.description, order: modData.order },
-      });
-    }
+    const conn = await pool.getConnection();
+    try {
+      for (const mod of modulesData) {
+        await conn.execute(
+          'INSERT INTO modules (id, `order`, title, description) VALUES (UUID(), ?, ?, ?) ON DUPLICATE KEY UPDATE title=VALUES(title), description=VALUES(description)',
+          [mod.order, mod.title, mod.description]
+        );
+      }
+      const [modRows] = await conn.query('SELECT id, `order` FROM modules WHERE `order` <= 5') as any[];
+      const modByOrder: Record<number, string> = {};
+      for (const m of modRows as any[]) modByOrder[m.order] = m.id;
 
     const lessonsData = [
       // Module 1
@@ -91,14 +122,12 @@ export class ContentService implements OnModuleInit {
         content: 'Fernando Collor (1990-1992) foi o primeiro presidente eleito diretamente após a ditadura, mas sofreu impeachment por corrupção. Itamar Franco assumiu e lançou o Plano Real (1994) com Fernando Henrique Cardoso, estabilizando a moeda e encerrando a hiperinflação. Lula da Silva, eleito em 2002, representou a chegada de um operário à presidência — marco histórico da democracia brasileira.' },
     ];
 
-    for (const l of lessonsData) {
-      const mod = modules[l.moduleOrder];
-      await this.prisma.lesson.upsert({
-        where: { id: l.id },
-        update: { title: l.title, content: l.content, xpReward: l.xpReward },
-        create: { id: l.id, moduleId: mod.id, order: l.order, title: l.title, content: l.content, xpReward: l.xpReward },
-      });
-    }
+      for (const l of lessonsData) {
+        await conn.execute(
+          'INSERT INTO lessons (id, module_id, `order`, title, content, xp_reward) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=VALUES(title), content=VALUES(content), xp_reward=VALUES(xp_reward)',
+          [l.id, modByOrder[l.moduleOrder], l.order, l.title, l.content, l.xpReward]
+        );
+      }
 
     const challengesData = [
       // Lesson l-1-1
@@ -382,21 +411,15 @@ export class ContentService implements OnModuleInit {
         explanation: 'O movimento dos "caras-pintadas" de 1992 foi uma das maiores mobilizações da história do Brasil, levando ao impeachment de Collor — o primeiro da história brasileira.' },
     ];
 
-    for (const c of challengesData) {
-      await this.prisma.challenge.upsert({
-        where: { id: c.id },
-        update: { content: c.content, options: c.options as any, correctAnswer: c.correctAnswer, explanation: c.explanation },
-        create: {
-          id: c.id,
-          lessonId: c.lessonId,
-          type: c.type,
-          content: c.content,
-          options: c.options as any,
-          correctAnswer: c.correctAnswer,
-          explanation: c.explanation,
-          difficultyWeight: 1.0,
-        },
-      });
+      for (const c of challengesData) {
+        await conn.execute(
+          'INSERT INTO challenges (id, lesson_id, type, content, options, correct_answer, explanation, difficulty_weight) VALUES (?, ?, ?, ?, ?, ?, ?, 1.0) ON DUPLICATE KEY UPDATE content=VALUES(content), options=VALUES(options), correct_answer=VALUES(correct_answer), explanation=VALUES(explanation)',
+          [c.id, c.lessonId, c.type, c.content, JSON.stringify(c.options), c.correctAnswer, c.explanation ?? null]
+        );
+      }
+      console.log('[Seed] Completed via mysql2 raw driver');
+    } finally {
+      conn.release();
     }
   }
 
