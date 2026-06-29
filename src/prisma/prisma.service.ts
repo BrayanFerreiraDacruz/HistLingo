@@ -41,7 +41,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   }
 
   async query<T = Record<string, any>>(sql: string, params?: any[]): Promise<T[]> {
-    const [rows] = await this.pool.execute(sql, params ?? []);
+    const [rows] = await this.pool.query(sql, params ?? []);
     return rows as T[];
   }
 
@@ -51,6 +51,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   }
 
   async run(sql: string, params?: any[]): Promise<void> {
-    await this.pool.execute(sql, params ?? []);
+    await this.pool.query(sql, params ?? []);
   }
 }

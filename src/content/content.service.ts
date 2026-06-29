@@ -424,7 +424,7 @@ export class ContentService implements OnModuleInit {
   }
 
   async getModules() {
-    const [rows] = await this.prisma.pool.execute(`
+    const [rows] = await this.prisma.pool.query(`
       SELECT m.id as moduleId, m.title as moduleTitle, m.description as moduleDescription, m.\`order\` as moduleOrder,
              l.id as lessonId, l.title as lessonTitle, l.content as lessonContent,
              l.xp_reward as lessonXpReward, l.\`order\` as lessonOrder, l.module_id as lessonModuleId
@@ -451,7 +451,7 @@ export class ContentService implements OnModuleInit {
   }
 
   async getLessonsByModule(moduleId: string) {
-    const [rows] = await this.prisma.pool.execute(
+    const [rows] = await this.prisma.pool.query(
       'SELECT id, title, content, xp_reward as xpReward, `order`, module_id as moduleId FROM lessons WHERE module_id = ? ORDER BY `order` ASC',
       [moduleId]
     ) as any[];
@@ -459,7 +459,7 @@ export class ContentService implements OnModuleInit {
   }
 
   async getLessonById(lessonId: string) {
-    const [rows] = await this.prisma.pool.execute(
+    const [rows] = await this.prisma.pool.query(
       'SELECT id, title, content, xp_reward as xpReward, `order`, module_id as moduleId FROM lessons WHERE id = ? LIMIT 1',
       [lessonId]
     ) as any[];
@@ -467,7 +467,7 @@ export class ContentService implements OnModuleInit {
   }
 
   async getChallengesByLesson(lessonId: string) {
-    const [rows] = await this.prisma.pool.execute(
+    const [rows] = await this.prisma.pool.query(
       'SELECT id, lesson_id as lessonId, type, content, options, correct_answer as correctAnswer, explanation, difficulty_weight as difficultyWeight FROM challenges WHERE lesson_id = ?',
       [lessonId]
     ) as any[];
