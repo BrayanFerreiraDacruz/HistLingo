@@ -1,3 +1,8 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+// Carrega .env relativo ao dist/ — funciona independente do CWD do PM2
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
