@@ -8,6 +8,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     this.pool = createPool(this.config());
+    try {
+      const conn = await this.pool.getConnection();
+      await conn.query('SET NAMES utf8mb4');
+      conn.release();
+      console.log('[DB] Pool connected');
+    } catch (err) {
+      console.error('[DB] Connection test failed:', err instanceof Error ? err.message : String(err));
+    }
   }
 
   async onModuleDestroy() {
@@ -25,6 +33,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
         database: u.pathname.replace(/^\//, ''),
         waitForConnections: true,
         connectionLimit: 5,
+        charset: 'UTF8MB4_GENERAL_CI',
       };
     } catch {
       return { host: '127.0.0.1', port: 3306, user: '', password: '', database: 'histlingo' };

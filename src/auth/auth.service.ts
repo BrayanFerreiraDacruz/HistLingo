@@ -24,8 +24,7 @@ export class AuthService {
     const hashed = await bcrypt.hash(dto.password, 10);
     const id = crypto.randomUUID();
     await this.db.run(
-      `INSERT INTO users (id, username, email, password, role, xp_total, level, streak_count, recovery_freeze_count, avatar_emoji, created_at, updated_at)
-       VALUES (?, ?, ?, ?, 'STUDENT', 0, 1, 0, 0, '🦊', NOW(), NOW())`,
+      'INSERT INTO users (id, username, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())',
       [id, dto.username, dto.email, hashed]
     );
     return this.signToken(id, dto.email);
