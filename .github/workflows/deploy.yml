@@ -36,121 +36,212 @@ jobs:
       - name: Install paramiko
         run: pip install paramiko -q
 
-      - name: Upload and restart
+      - name: Upload and configure
         env:
           SSH_PASS: ${{ secrets.SSH_PASS }}
         run: |
           python3 << 'PYEOF'
-          import paramiko, os, sys, stat
+          import paramiko, os, stat, time
+          import select as sel
 
-          host = '147.93.37.148'
-          port = 65002
-          user = 'u694432103'
-          pwd  = os.environ['SSH_PASS']
+          HOST = '147.93.37.148'
+          PORT = 65002
+          USER = 'u694432103'
+          PWD  = os.environ['SSH_PASS']
+          NEW_DOMAIN = 'goldenrod-whale-887048.hostingersite.com'
+          PUB = f'/home/{USER}/domains/{NEW_DOMAIN}/public_html'
+          BE  = f'/home/{USER}/histlingo'
+          NODE_PATH = '/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin'
+          ENV_PREFIX = f'export PATH={NODE_PATH}; export HOME=/home/{USER}; '
 
           client = paramiko.SSHClient()
           client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-          client.connect(host, port=port, username=user, password=pwd,
+          client.connect(HOST, port=PORT, username=USER, password=PWD,
                          timeout=30, auth_timeout=20, banner_timeout=20)
+
+          def ssh(cmd, timeout=20):
+              _, o, e = client.exec_command(ENV_PREFIX + cmd, timeout=timeout)
+              out = o.read().decode('utf-8', errors='replace')
+              err = e.read().decode('utf-8', errors='replace')
+              return out + err
+
+          def ssh_wait(cmd, sentinel='__DONE__', timeout=45):
+              _, o, _ = client.exec_command(ENV_PREFIX + cmd + f'; echo {sentinel}', timeout=timeout)
+              buf = b''
+              for _ in range(timeout):
+                  r, _, _ = sel.select([o.channel], [], [], 1)
+                  if r:
+                      buf += o.read(4096)
+                      if sentinel.encode() in buf: break
+              return buf.decode('utf-8', errors='replace')
+
           sftp = client.open_sftp()
 
+          def mkdirs(path):
+              parts = path.lstrip('/').split('/')
+              cur = ''
+              for p in parts:
+                  cur += '/' + p
+                  try: sftp.stat(cur)
+                  except FileNotFoundError:
+                      try: sftp.mkdir(cur)
+                      except: pass
+
           def upload_dir(local_dir, remote_dir):
-              """Recursively upload a local directory to remote."""
-              # Ensure remote dir exists
-              try:
-                  sftp.stat(remote_dir)
-              except FileNotFoundError:
-                  sftp.mkdir(remote_dir)
-
+              mkdirs(remote_dir)
               for item in os.listdir(local_dir):
-                  local_path = os.path.join(local_dir, item)
-                  remote_path = remote_dir + '/' + item
-                  if os.path.isfile(local_path):
-                      print(f"  PUT {local_path} → {remote_path}")
-                      sftp.put(local_path, remote_path)
-                  elif os.path.isdir(local_path):
-                      upload_dir(local_path, remote_path)
+                  lp = os.path.join(local_dir, item)
+                  rp = remote_dir + '/' + item
+                  if os.path.isfile(lp):
+                      sftp.put(lp, rp)
+                  elif os.path.isdir(lp):
+                      upload_dir(lp, rp)
 
-          # 1) Upload frontend dist → public_html (keep api/ intact)
+          # ── 1) Read existing .env to preserve DATABASE_URL ────────────
+          print("=== Reading existing .env ===")
+          existing_env = ssh(f'cat {BE}/.env 2>/dev/null || echo ""')
+          db_url = ''
+          jwt_secret = 'histlingo-jwt-secret-2024'
+          for line in existing_env.splitlines():
+              line = line.strip()
+              if line.startswith('DATABASE_URL='): db_url = line[len('DATABASE_URL='):]
+              if line.startswith('JWT_SECRET='): jwt_secret = line[len('JWT_SECRET='):]
+          print(f"DATABASE_URL found: {'yes' if db_url else 'NOT FOUND - app will fail without it'}")
+
+          # ── 2) Write updated .env ─────────────────────────────────────
+          print("=== Updating .env ===")
+          env_content = f"""NODE_ENV=production
+PORT=3000
+FRONTEND_URL=https://{NEW_DOMAIN}
+JWT_SECRET={jwt_secret}
+DATABASE_URL={db_url}
+"""
+          import tempfile, io
+          env_bytes = env_content.encode()
+          sftp.putfo(io.BytesIO(env_bytes), f'{BE}/.env')
+          print("  .env written")
+
+          # ── 3) Upload backend dist ────────────────────────────────────
+          print("=== Uploading backend dist ===")
+          upload_dir('dist', f'{BE}/dist')
+
+          # ── 4) Create PHP proxy on new site ───────────────────────────
+          print("=== Setting up PHP proxy ===")
+          mkdirs(PUB + '/api')
+
+          php_proxy = r"""<?php
+// HistLingo API Proxy — forwards /api/* to NestJS on port 3000
+$uri = $_SERVER['REQUEST_URI'] ?? '/';
+$target = 'http://127.0.0.1:3000' . $uri;
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$body = file_get_contents('php://input');
+
+$req_headers = [];
+foreach (getallheaders() as $name => $value) {
+    $lower = strtolower($name);
+    if ($lower === 'host' || $lower === 'connection') continue;
+    $req_headers[] = "$name: $value";
+}
+
+$ch = curl_init($target);
+curl_setopt_array($ch, [
+    CURLOPT_CUSTOMREQUEST  => $method,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HEADER         => true,
+    CURLOPT_HTTPHEADER     => $req_headers,
+    CURLOPT_TIMEOUT        => 30,
+    CURLOPT_CONNECTTIMEOUT => 5,
+    CURLOPT_FOLLOWLOCATION => false,
+]);
+if ($body !== false && strlen($body) > 0) {
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+}
+
+$raw = curl_exec($ch);
+$errno = curl_errno($ch);
+if ($errno || $raw === false) {
+    http_response_code(503);
+    header('Content-Type: application/json');
+    echo json_encode(['statusCode'=>503,'message'=>'Servidor em manutenção. Tente novamente em instantes.']);
+    curl_close($ch);
+    exit;
+}
+$status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$hsize  = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+curl_close($ch);
+
+$body_out = substr($raw, $hsize);
+$hdrs_raw = substr($raw, 0, $hsize);
+http_response_code($status);
+foreach (explode("\r\n", $hdrs_raw) as $h) {
+    $l = strtolower($h);
+    if (str_starts_with($l,'transfer-encoding')||str_starts_with($l,'connection')||str_starts_with($l,'http/')) continue;
+    if (str_contains($h,':')) header($h, false);
+}
+echo $body_out;
+"""
+          sftp.putfo(io.BytesIO(php_proxy.encode()), PUB + '/api/index.php')
+
+          # root .htaccess — SPA fallback + route /api to PHP proxy
+          htaccess_root = """Options -MultiViews
+RewriteEngine On
+# Proxy /api/* to NestJS via PHP
+RewriteRule ^api(/.*)?$ api/index.php [QSA,L]
+# SPA fallback
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [QSA,L]
+"""
+          sftp.putfo(io.BytesIO(htaccess_root.encode()), PUB + '/.htaccess')
+
+          # api/.htaccess — route everything to index.php
+          htaccess_api = """RewriteEngine On
+RewriteRule ^ index.php [QSA,L]
+"""
+          sftp.putfo(io.BytesIO(htaccess_api.encode()), PUB + '/api/.htaccess')
+          print("  PHP proxy + .htaccess written")
+
+          # ── 5) Upload frontend dist ───────────────────────────────────
           print("=== Uploading frontend ===")
-          pub = '/home/u694432103/domains/grey-salamander-998398.hostingersite.com/public_html'
           fe_dist = 'histlingo-web/dist'
           for item in os.listdir(fe_dist):
-              local_path = os.path.join(fe_dist, item)
-              remote_path = pub + '/' + item
-              if os.path.isfile(local_path):
+              lp = os.path.join(fe_dist, item)
+              rp = PUB + '/' + item
+              if item == 'api': continue  # never overwrite the proxy
+              if os.path.isfile(lp):
                   print(f"  PUT {item}")
-                  sftp.put(local_path, remote_path)
-              elif os.path.isdir(local_path):
-                  upload_dir(local_path, remote_path)
-
-          # 2) Upload backend dist → ~/histlingo/dist
-          print("=== Uploading backend dist ===")
-          be_remote = '/home/u694432103/histlingo/dist'
-          upload_dir('dist', be_remote)
+                  sftp.put(lp, rp)
+              elif os.path.isdir(lp):
+                  upload_dir(lp, rp)
 
           sftp.close()
 
-          # 3) Restart PM2 — read with short timeout, ignore timeout error (PM2 output arrives after process re-forks)
+          # ── 6) Restart PM2 with .env loaded ──────────────────────────
           print("=== Restarting PM2 ===")
-          restart_cmd = (
-              'export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin; '
-              'export HOME=/home/u694432103; '
-              '(pm2 restart histlingo 2>&1 || pm2 start /home/u694432103/histlingo/dist/main.js --name histlingo 2>&1); '
-              'pm2 save 2>&1; echo DONE'
+          r = ssh_wait(
+              f'cd {BE} && (pm2 restart histlingo 2>&1 || pm2 start {BE}/dist/main.js --name histlingo 2>&1); pm2 save 2>&1',
+              sentinel='__DONE__', timeout=45
           )
-          _, out, err = client.exec_command(restart_cmd, timeout=45)
-          try:
-              output = b''
-              import select
-              while True:
-                  r, _, _ = select.select([out.channel], [], [], 10)
-                  if not r:
-                      break
-                  chunk = out.read(4096)
-                  if not chunk:
-                      break
-                  output += chunk
-                  if b'DONE' in output:
-                      break
-              print("PM2:", output.decode('utf-8', errors='replace'))
-          except Exception as e:
-              print(f"PM2 restart sent (output timeout is normal with PM2): {e}")
+          print("PM2:", r[:500])
 
-          # 4) Wait 8s then capture PM2 startup logs for diagnostics
-          print("=== Waiting for app startup ===")
-          import time
+          # ── 7) Wait + check logs ──────────────────────────────────────
+          print("=== Waiting for startup ===")
           time.sleep(8)
-          _, lo, _ = client.exec_command(
-              'export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin; '
-              'export HOME=/home/u694432103; '
-              'pm2 logs histlingo --lines 30 --nostream 2>&1; '
-              'echo "---HEALTH---"; curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:3000/api/health',
-              timeout=20
-          )
-          print("Startup logs:\n", lo.read().decode('utf-8', errors='replace'))
+          logs = ssh('pm2 logs histlingo --lines 30 --nostream 2>&1; echo "---"; curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:3000/api/health')
+          print("Startup logs:\n", logs)
 
-          # 5) Install server-side crontab (1-minute recovery — survives PM2 crashes)
+          # ── 8) Install 1-minute crontab ───────────────────────────────
           print("=== Installing crontab ===")
-          cron_line = (
-              '* * * * * '
-              'export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin; '
-              'export HOME=/home/u694432103; '
-              'pm2 list 2>/dev/null | grep -q histlingo || '
-              '(pm2 start /home/u694432103/histlingo/dist/main.js --name histlingo 2>&1; pm2 save 2>&1) '
-              '>> /home/u694432103/histlingo/cron.log 2>&1'
+          cron = (
+              f'* * * * * export PATH={NODE_PATH}; export HOME=/home/{USER}; '
+              f'pm2 list 2>/dev/null | grep -q histlingo || '
+              f'(cd {BE} && pm2 start {BE}/dist/main.js --name histlingo 2>&1; pm2 save 2>&1) '
+              f'>> {BE}/cron.log 2>&1'
           )
-          cron_cmd = f'(crontab -l 2>/dev/null | grep -v "histlingo"; echo \'{cron_line}\') | crontab -; echo CRON_DONE'
-          _, cout, _ = client.exec_command(cron_cmd, timeout=15)
-          import select as sel
-          cbuf = b''
-          for _ in range(30):
-              r, _, _ = sel.select([cout.channel], [], [], 1)
-              if r:
-                  cbuf += cout.read(1024)
-                  if b'CRON_DONE' in cbuf: break
-          print("Crontab:", cbuf.decode('utf-8', errors='replace').strip() or 'set')
+          r2 = ssh(f"(crontab -l 2>/dev/null | grep -v histlingo; echo '{cron}') | crontab -")
+          print("Crontab set")
 
           client.close()
           print("=== Deploy complete ===")
+          print(f"Site: https://{NEW_DOMAIN}")
           PYEOF

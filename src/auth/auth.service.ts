@@ -64,7 +64,7 @@ export class AuthService {
       [token, expires, user.id]
     );
 
-    const baseUrl = process.env.FRONTEND_URL || 'https://grey-salamander-998398.hostingersite.com';
+    const baseUrl = process.env.FRONTEND_URL || 'https://goldenrod-whale-887048.hostingersite.com';
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
     await this.sendResetEmail(user.email, user.username, resetUrl);
     return { message: 'Se o email existir, você receberá as instruções em breve.' };
