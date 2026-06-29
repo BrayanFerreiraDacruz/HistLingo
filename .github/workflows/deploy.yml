@@ -117,7 +117,20 @@ jobs:
           except Exception as e:
               print(f"PM2 restart sent (output timeout is normal with PM2): {e}")
 
-          # 4) Install server-side crontab (1-minute recovery — survives PM2 crashes)
+          # 4) Wait 8s then capture PM2 startup logs for diagnostics
+          print("=== Waiting for app startup ===")
+          import time
+          time.sleep(8)
+          _, lo, _ = client.exec_command(
+              'export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin; '
+              'export HOME=/home/u694432103; '
+              'pm2 logs histlingo --lines 30 --nostream 2>&1; '
+              'echo "---HEALTH---"; curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:3000/api/health',
+              timeout=20
+          )
+          print("Startup logs:\n", lo.read().decode('utf-8', errors='replace'))
+
+          # 5) Install server-side crontab (1-minute recovery — survives PM2 crashes)
           print("=== Installing crontab ===")
           cron_line = (
               '* * * * * '
