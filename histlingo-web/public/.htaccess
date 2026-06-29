@@ -1,10 +1,13 @@
 Options -MultiViews
 RewriteEngine On
 
+# Passa o header Authorization para o PHP (Apache CGI remove por padrao)
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Proxy /api/* para NestJS via PHP
 RewriteRule ^api(/.*)?$ api/index.php [QSA,L]
 
-# SPA fallback — tudo que não é arquivo serve o index.html
+# SPA fallback
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [QSA,L]

@@ -5,11 +5,26 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $target = 'http://127.0.0.1:3000' . $uri;
 $body   = file_get_contents('php://input');
 
+// Apache em modo CGI/FastCGI remove o header Authorization.
+// O .htaccess salva em HTTP_AUTHORIZATION via RewriteRule.
 $headers = [];
+$authSent = false;
+
 foreach (getallheaders() as $name => $value) {
     $lower = strtolower($name);
     if ($lower === 'host' || $lower === 'connection') continue;
+    if ($lower === 'authorization') $authSent = true;
     $headers[] = "$name: $value";
+}
+
+// Fallback para o valor salvo pelo .htaccess
+if (!$authSent) {
+    $auth = $_SERVER['HTTP_AUTHORIZATION']
+         ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+         ?? null;
+    if ($auth) {
+        $headers[] = "Authorization: $auth";
+    }
 }
 
 $ch = curl_init($target);
@@ -37,8 +52,8 @@ if ($errno || $raw === false) {
     exit;
 }
 
-$status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$hsize  = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+$status   = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$hsize    = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 curl_close($ch);
 
 $body_out = substr($raw, $hsize);
