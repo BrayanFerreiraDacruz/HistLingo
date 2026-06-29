@@ -1,0 +1,61 @@
+name: Check Server Files
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Install paramiko
+        run: pip install paramiko -q
+
+      - name: SSH check
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+        run: |
+          python3 << 'PYEOF'
+          import paramiko, os
+
+          HOST = '147.93.37.148'
+          PORT = 65002
+          USER = 'u694432103'
+          PWD  = os.environ['SSH_PASS']
+          DOMAIN = 'goldenrod-whale-887048.hostingersite.com'
+          PUB = f'/home/{USER}/domains/{DOMAIN}/public_html'
+
+          client = paramiko.SSHClient()
+          client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+          client.connect(HOST, port=PORT, username=USER, password=PWD, timeout=30)
+
+          def ssh(cmd):
+              _, o, e = client.exec_command(cmd, timeout=15)
+              return (o.read() + e.read()).decode('utf-8', errors='replace')
+
+          print("=== public_html contents ===")
+          print(ssh(f'ls -la {PUB}/'))
+
+          print("\n=== api/ directory ===")
+          print(ssh(f'ls -la {PUB}/api/ 2>/dev/null || echo "SEM PASTA api/"'))
+
+          print("\n=== .htaccess content ===")
+          print(ssh(f'cat {PUB}/.htaccess 2>/dev/null || echo "SEM .htaccess"'))
+
+          print("\n=== api/index.php (primeiras 10 linhas) ===")
+          print(ssh(f'head -20 {PUB}/api/index.php 2>/dev/null || echo "SEM api/index.php"'))
+
+          print("\n=== PM2 status ===")
+          print(ssh('export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin; export HOME=/home/u694432103; pm2 list 2>&1'))
+
+          print("\n=== Health check ===")
+          print(ssh('curl -s http://127.0.0.1:3000/api/health'))
+
+          print("\n=== Test login ===")
+          print(ssh('curl -s -X POST http://127.0.0.1:3000/api/auth/login -H "Content-Type: application/json" -d \'{"email":"test@test.com","password":"123456"}\' 2>&1 | head -c 200'))
+
+          print("\n=== .env ===")
+          print(ssh(f'cat /home/{USER}/histlingo/.env 2>/dev/null | grep -v DATABASE_URL | grep -v JWT_SECRET'))
+
+          client.close()
+          PYEOF
