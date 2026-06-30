@@ -1,30 +1,76 @@
 <?php
-// HistLingo API Proxy — encaminha /api/* para NestJS na porta 3000
+// HistLingo API Proxy com auto-recuperacao
+// Se o NestJS (porta 3000) estiver fora, tenta reiniciar automaticamente.
+
+define('NEST_HOST', '127.0.0.1');
+define('NEST_PORT', 3000);
+define('BE_PATH',   '/home/u694432103/histlingo');
+define('NODE_PATH', '/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin');
+
+function nestIsUp(): bool {
+    $sock = @fsockopen(NEST_HOST, NEST_PORT, $errno, $errstr, 1.5);
+    if ($sock) { fclose($sock); return true; }
+    return false;
+}
+
+function tryStartNest(): void {
+    $cmd = sprintf(
+        'export PATH=%s; export HOME=/home/u694432103; cd %s && pm2 start ecosystem.config.js > /dev/null 2>&1',
+        NODE_PATH, BE_PATH
+    );
+    $disabled = array_map('trim', explode(',', (string)ini_get('disable_functions')));
+
+    if (function_exists('shell_exec') && !in_array('shell_exec', $disabled)) {
+        shell_exec($cmd . ' &');
+    } elseif (function_exists('exec') && !in_array('exec', $disabled)) {
+        exec($cmd . ' > /dev/null 2>&1 &');
+    } elseif (function_exists('proc_open')) {
+        $desc = [['pipe','r'],['pipe','w'],['pipe','w']];
+        $p = proc_open('bash -c ' . escapeshellarg($cmd . ' &'), $desc, $pipes);
+        if ($p) proc_close($p);
+    }
+}
+
+// ── Auto-recuperacao ──────────────────────────────────────────────────────────
+if (!nestIsUp()) {
+    tryStartNest();
+    // Aguarda até 8s o NestJS subir
+    $up = false;
+    for ($i = 0; $i < 8; $i++) {
+        sleep(1);
+        if (nestIsUp()) { $up = true; break; }
+    }
+    if (!$up) {
+        http_response_code(503);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'statusCode' => 503,
+            'message'    => 'Servidor iniciando, tente novamente em alguns segundos.',
+        ]);
+        exit;
+    }
+}
+
+// ── Proxy da requisição ───────────────────────────────────────────────────────
 $uri    = $_SERVER['REQUEST_URI'] ?? '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$target = 'http://127.0.0.1:3000' . $uri;
+$target = 'http://' . NEST_HOST . ':' . NEST_PORT . $uri;
 $body   = file_get_contents('php://input');
 
-// Apache em modo CGI/FastCGI remove o header Authorization.
-// O .htaccess salva em HTTP_AUTHORIZATION via RewriteRule.
-$headers = [];
-$authSent = false;
-
+// Apache CGI remove Authorization — recuperamos via RewriteRule no .htaccess
+$headers  = [];
+$hasAuth  = false;
 foreach (getallheaders() as $name => $value) {
     $lower = strtolower($name);
     if ($lower === 'host' || $lower === 'connection') continue;
-    if ($lower === 'authorization') $authSent = true;
+    if ($lower === 'authorization') $hasAuth = true;
     $headers[] = "$name: $value";
 }
-
-// Fallback para o valor salvo pelo .htaccess
-if (!$authSent) {
+if (!$hasAuth) {
     $auth = $_SERVER['HTTP_AUTHORIZATION']
          ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
          ?? null;
-    if ($auth) {
-        $headers[] = "Authorization: $auth";
-    }
+    if ($auth) $headers[] = "Authorization: $auth";
 }
 
 $ch = curl_init($target);
