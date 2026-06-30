@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { createConnection } from 'mysql2/promise';
-import type { Connection } from 'mysql2/promise';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { createPool } from 'mysql2/promise';
+import type { Pool } from 'mysql2/promise';
 
 @Injectable()
-export class PrismaService {
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
+  private _pool: Pool;
+
   private dbConfig() {
     try {
       const u = new URL(process.env.DATABASE_URL ?? 'mysql://localhost/histlingo');
@@ -14,27 +16,39 @@ export class PrismaService {
         password: decodeURIComponent(u.password || ''),
         database: u.pathname.replace(/^\//, ''),
         connectTimeout: 10000,
+        waitForConnections: true,
+        connectionLimit: 5,
+        queueLimit: 0,
       };
     } catch {
       const raw = process.env.DATABASE_URL ?? '';
       console.error('[DB] Failed to parse DATABASE_URL:', raw ? raw.slice(0, 30) + '...' : 'empty');
-      return { host: '127.0.0.1', port: 3306, user: '', password: '', database: 'histlingo' };
+      return {
+        host: '127.0.0.1', port: 3306, user: '', password: '', database: 'histlingo',
+        waitForConnections: true, connectionLimit: 5, queueLimit: 0,
+      };
     }
   }
 
-  private async connect(): Promise<Connection> {
-    const conn = await createConnection(this.dbConfig());
-    return conn;
+  async onModuleInit() {
+    this._pool = createPool(this.dbConfig());
+    const conn = await this._pool.getConnection().catch((e: Error) => {
+      console.error('[DB] Pool init failed:', e.message);
+      return null;
+    });
+    if (conn) {
+      conn.release();
+      console.log('[DB] Connection pool ready');
+    }
+  }
+
+  async onModuleDestroy() {
+    await this._pool?.end().catch(() => {});
   }
 
   async query<T = Record<string, any>>(sql: string, params?: any[]): Promise<T[]> {
-    const conn = await this.connect();
-    try {
-      const [rows] = await conn.query(sql, params ?? []);
-      return rows as T[];
-    } finally {
-      await conn.end().catch(() => {});
-    }
+    const [rows] = await this._pool.query(sql, params ?? []);
+    return rows as T[];
   }
 
   async queryOne<T = Record<string, any>>(sql: string, params?: any[]): Promise<T | null> {
@@ -43,15 +57,6 @@ export class PrismaService {
   }
 
   async run(sql: string, params?: any[]): Promise<void> {
-    const conn = await this.connect();
-    try {
-      await conn.query(sql, params ?? []);
-    } finally {
-      await conn.end().catch(() => {});
-    }
-  }
-
-  get pool() {
-    throw new Error('pool not available — use query/queryOne/run methods');
+    await this._pool.query(sql, params ?? []);
   }
 }

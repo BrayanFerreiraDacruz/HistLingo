@@ -45,16 +45,41 @@ jobs:
             export HOME=/home/u694432103
             cd /home/u694432103/histlingo
 
+            mkdir -p /home/u694432103/histlingo/logs
+
             pm2 stop histlingo 2>/dev/null || true
             pm2 delete histlingo 2>/dev/null || true
             pm2 start ecosystem.config.js
             pm2 save
 
-            sleep 8
+            sleep 10
             curl -sf http://127.0.0.1:3000/api/health && echo "HEALTH OK" || echo "HEALTH FAIL"
-            pm2 logs histlingo --lines 10 --nostream
+            pm2 logs histlingo --lines 15 --nostream
 
-            NPATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin
-            CRON="*/2 * * * * export PATH=$NPATH; export HOME=/home/u694432103; pm2 list 2>/dev/null | grep -q 'histlingo.*online' || (cd /home/u694432103/histlingo && pm2 start ecosystem.config.js 2>&1; pm2 save 2>&1) >> /home/u694432103/histlingo/cron.log 2>&1"
-            (crontab -l 2>/dev/null | grep -v histlingo; echo "$CRON") | crontab -
+            cat > /home/u694432103/histlingo/recover.sh << 'SCRIPT'
+#!/bin/bash
+export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin
+export HOME=/home/u694432103
+LOG=/home/u694432103/histlingo/logs/cron.log
+TS=$(date '+%Y-%m-%d %H:%M:%S')
+
+if curl -sf --max-time 3 http://127.0.0.1:3000/api/health >/dev/null 2>&1; then
+  exit 0
+fi
+
+echo "[$TS] RECOVER: app nao responde, reiniciando..." >> "$LOG"
+cd /home/u694432103/histlingo
+
+if pm2 list 2>/dev/null | grep -q 'histlingo'; then
+  pm2 restart histlingo >> "$LOG" 2>&1
+else
+  pm2 start ecosystem.config.js >> "$LOG" 2>&1
+fi
+pm2 save >> "$LOG" 2>&1
+echo "[$TS] RECOVER: concluido" >> "$LOG"
+SCRIPT
+
+            chmod +x /home/u694432103/histlingo/recover.sh
+
+            (crontab -l 2>/dev/null | grep -v histlingo; echo "*/2 * * * * /bin/bash /home/u694432103/histlingo/recover.sh") | crontab -
             echo "Crontab configurado"

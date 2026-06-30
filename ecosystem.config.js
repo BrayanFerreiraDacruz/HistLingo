@@ -7,6 +7,14 @@ module.exports = {
     autorestart: true,
     watch: false,
     max_restarts: 999,
-    restart_delay: 2000,
+    min_uptime: '5s',
+    restart_delay: 3000,
+    max_memory_restart: '200M',
+    error_file: '/home/u694432103/histlingo/logs/error.log',
+    out_file: '/home/u694432103/histlingo/logs/out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    env: {
+      NODE_ENV: 'production',
+    },
   }]
 };
