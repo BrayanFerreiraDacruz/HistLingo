@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -18,28 +18,42 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Build backend
+      - name: Build backend (NestJS)
         run: npm ci && npm run build
 
-      - name: Upload dist to server
+      - name: Build frontend (React/Vite)
+        run: npm --prefix histlingo-web ci && npm --prefix histlingo-web run build
+
+      - name: Upload backend to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: 147.93.37.148
           port: 65002
           username: u694432103
           password: ${{ secrets.SSH_PASS }}
-          source: dist/,ecosystem.config.js
+          source: dist/,ecosystem.config.js,package.json,package-lock.json,prisma/
           target: /home/u694432103/histlingo/
           strip_components: 0
 
-      - name: Restart PM2 + crontab
+      - name: Upload frontend to public_html
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 147.93.37.148
+          port: 65002
+          username: u694432103
+          password: ${{ secrets.SSH_PASS }}
+          source: histlingo-web/dist/
+          target: /home/u694432103/public_html/
+          strip_components: 2
+
+      - name: Restart PM2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 147.93.37.148
           port: 65002
           username: u694432103
           password: ${{ secrets.SSH_PASS }}
-          command_timeout: 90s
+          command_timeout: 60s
           script: |
             export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin
             export HOME=/home/u694432103
@@ -52,34 +66,7 @@ jobs:
             pm2 start ecosystem.config.js
             pm2 save
 
-            sleep 10
+            sleep 8
             curl -sf http://127.0.0.1:3000/api/health && echo "HEALTH OK" || echo "HEALTH FAIL"
-            pm2 logs histlingo --lines 15 --nostream
-
-            cat > /home/u694432103/histlingo/recover.sh << 'SCRIPT'
-#!/bin/bash
-export PATH=/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin
-export HOME=/home/u694432103
-LOG=/home/u694432103/histlingo/logs/cron.log
-TS=$(date '+%Y-%m-%d %H:%M:%S')
-
-if curl -sf --max-time 3 http://127.0.0.1:3000/api/health >/dev/null 2>&1; then
-  exit 0
-fi
-
-echo "[$TS] RECOVER: app nao responde, reiniciando..." >> "$LOG"
-cd /home/u694432103/histlingo
-
-if pm2 list 2>/dev/null | grep -q 'histlingo'; then
-  pm2 restart histlingo >> "$LOG" 2>&1
-else
-  pm2 start ecosystem.config.js >> "$LOG" 2>&1
-fi
-pm2 save >> "$LOG" 2>&1
-echo "[$TS] RECOVER: concluido" >> "$LOG"
-SCRIPT
-
-            chmod +x /home/u694432103/histlingo/recover.sh
-
-            (crontab -l 2>/dev/null | grep -v histlingo; echo "*/2 * * * * /bin/bash /home/u694432103/histlingo/recover.sh") | crontab -
-            echo "Crontab configurado"
+            pm2 list
+            echo "Deploy concluido com sucesso!"
