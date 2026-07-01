@@ -1,11 +1,13 @@
 <?php
-// HistLingo API Proxy com auto-recuperacao
-// Se o NestJS (porta 3000) estiver fora, tenta reiniciar automaticamente.
+// HistLingo API Proxy com auto-recuperacao permanente
+// Inicia o NestJS diretamente via proc_open se a porta 3000 estiver fora.
 
 define('NEST_HOST', '127.0.0.1');
 define('NEST_PORT', 3000);
 define('BE_PATH',   '/home/u694432103/histlingo');
+define('NODE_BIN',  '/opt/alt/alt-nodejs20/root/usr/bin/node');
 define('NODE_PATH', '/opt/alt/alt-nodejs20/root/usr/bin:/home/u694432103/local/bin:/usr/local/bin:/usr/bin:/bin');
+define('PM2_BIN',   '/home/u694432103/local/bin/pm2');
 
 function nestIsUp(): bool {
     $sock = @fsockopen(NEST_HOST, NEST_PORT, $errno, $errstr, 1.5);
@@ -13,30 +15,54 @@ function nestIsUp(): bool {
     return false;
 }
 
-function tryStartNest(): void {
-    $cmd = sprintf(
-        'export PATH=%s; export HOME=/home/u694432103; cd %s && pm2 start ecosystem.config.js > /dev/null 2>&1',
-        NODE_PATH, BE_PATH
-    );
-    $disabled = array_map('trim', explode(',', (string)ini_get('disable_functions')));
-
-    if (function_exists('shell_exec') && !in_array('shell_exec', $disabled)) {
-        shell_exec($cmd . ' &');
-    } elseif (function_exists('exec') && !in_array('exec', $disabled)) {
-        exec($cmd . ' > /dev/null 2>&1 &');
-    } elseif (function_exists('proc_open')) {
-        $desc = [['pipe','r'],['pipe','w'],['pipe','w']];
-        $p = proc_open('bash -c ' . escapeshellarg($cmd . ' &'), $desc, $pipes);
-        if ($p) proc_close($p);
+function loadEnv(): array {
+    $env = [
+        'HOME'     => '/home/u694432103',
+        'PATH'     => NODE_PATH,
+        'NODE_ENV' => 'production',
+    ];
+    $lines = @file(BE_PATH . '/.env') ?: [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (!$line || $line[0] === '#' || !str_contains($line, '=')) continue;
+        [$k, $v] = explode('=', $line, 2);
+        $env[trim($k)] = trim($v, "'\"");
     }
+    return $env;
+}
+
+function tryStartNest(): void {
+    if (!function_exists('proc_open')) return;
+
+    $env  = loadEnv();
+    $desc = [
+        0 => ['pipe', 'r'],
+        1 => ['file', BE_PATH . '/logs/out.log',   'a'],
+        2 => ['file', BE_PATH . '/logs/error.log', 'a'],
+    ];
+
+    // Tenta via PM2 primeiro (se daemon estiver rodando)
+    if (is_executable(PM2_BIN)) {
+        $pm2cmd = PM2_BIN . ' start ' . BE_PATH . '/ecosystem.config.js 2>/dev/null || ' .
+                  PM2_BIN . ' restart histlingo 2>/dev/null';
+        $h = @proc_open('bash -c ' . escapeshellarg($pm2cmd), $desc, $pipes, BE_PATH, $env);
+        if ($h) { proc_close($h); return; }
+    }
+
+    // Fallback: inicia node diretamente (funciona mesmo sem PM2)
+    $nodeCmd = NODE_BIN . ' ' . BE_PATH . '/dist/main.js';
+    $h = @proc_open(
+        'bash -c ' . escapeshellarg('nohup ' . $nodeCmd . ' </dev/null &'),
+        $desc, $pipes, BE_PATH, $env
+    );
+    if ($h) proc_close($h);
 }
 
 // ── Auto-recuperacao ──────────────────────────────────────────────────────────
 if (!nestIsUp()) {
     tryStartNest();
-    // Aguarda até 8s o NestJS subir
     $up = false;
-    for ($i = 0; $i < 8; $i++) {
+    for ($i = 0; $i < 12; $i++) {
         sleep(1);
         if (nestIsUp()) { $up = true; break; }
     }
@@ -57,9 +83,8 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $target = 'http://' . NEST_HOST . ':' . NEST_PORT . $uri;
 $body   = file_get_contents('php://input');
 
-// Apache CGI remove Authorization — recuperamos via RewriteRule no .htaccess
-$headers  = [];
-$hasAuth  = false;
+$headers = [];
+$hasAuth = false;
 foreach (getallheaders() as $name => $value) {
     $lower = strtolower($name);
     if ($lower === 'host' || $lower === 'connection') continue;
@@ -67,9 +92,7 @@ foreach (getallheaders() as $name => $value) {
     $headers[] = "$name: $value";
 }
 if (!$hasAuth) {
-    $auth = $_SERVER['HTTP_AUTHORIZATION']
-         ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
-         ?? null;
+    $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
     if ($auth) $headers[] = "Authorization: $auth";
 }
 
