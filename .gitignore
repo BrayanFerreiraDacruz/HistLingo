@@ -6,6 +6,7 @@ histlingo-web/node_modules/
 dist/
 histlingo-web/dist/
 build/
+public/
 
 # Environment
 .env

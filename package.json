@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "postbuild": "npm --prefix histlingo-web install --include=dev && npm --prefix histlingo-web run build && node -e \"require('fs').cpSync('histlingo-web/dist','public',{recursive:true,force:true})\"",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
