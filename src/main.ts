@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 // Carrega .env relativo ao dist/ — funciona independente do CWD do PM2
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
@@ -27,13 +28,13 @@ async function bootstrap() {
 
   if (isProd) {
     const publicPath = join(__dirname, '..', 'public');
-    // Serve static assets (JS, CSS, images) from the public directory
-    app.useStaticAssets(publicPath);
-    // SPA fallback: serve index.html for all non-API routes
-    app.use((req: Request, res: Response, next: NextFunction) => {
-      if (req.path.startsWith('/api')) return next();
-      res.sendFile(join(publicPath, 'index.html'));
-    });
+    if (fs.existsSync(publicPath)) {
+      app.useStaticAssets(publicPath);
+      app.use((req: Request, res: Response, next: NextFunction) => {
+        if (req.path.startsWith('/api')) return next();
+        res.sendFile(join(publicPath, 'index.html'));
+      });
+    }
   }
 
   await app.listen(process.env.PORT ?? 3000);
