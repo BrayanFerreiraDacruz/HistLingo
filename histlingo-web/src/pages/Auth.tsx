@@ -4,6 +4,7 @@ import { X, AlertCircle, CheckCircle, ChevronRight } from "lucide-react"
 import { useAuth } from "../lib/AuthContext"
 import { auth } from "../lib/api"
 import { useSearch } from "wouter"
+import KineticGrid from "../components/ui/kinetic-grid"
 
 type Screen = 'landing' | 'register' | 'login' | 'forgot' | 'reset'
 
@@ -79,7 +80,7 @@ export function Auth() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#060C12] overflow-hidden flex items-center justify-center">
+    <KineticGrid className="fixed inset-0 z-50 flex items-center justify-center">
 
       {/* Floating background icons — landing only */}
       {screen === 'landing' && FLOATING_ICONS.map((item, i) => (
@@ -264,6 +265,6 @@ export function Auth() {
         )}
 
       </AnimatePresence>
-    </div>
+    </KineticGrid>
   )
 }
