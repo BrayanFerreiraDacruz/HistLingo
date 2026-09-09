@@ -82,7 +82,7 @@ export function Profile() {
           {/* Avatar */}
           <div className="relative">
             <button onClick={() => { setEditing(true); setPickingAvatar(true) }}
-              className="text-7xl w-24 h-24 rounded-full bg-[#1A2633] border-4 border-(--color-border) flex items-center justify-center hover:border-(--color-primary) transition-colors relative">
+              className="text-7xl w-24 h-24 rounded-full bg-[#0F1C29] border-4 border-(--color-primary)/40 flex items-center justify-center hover:border-(--color-primary) hover:shadow-[0_0_20px_rgba(0,214,100,0.4)] transition-all relative shadow-[0_0_12px_rgba(0,214,100,0.2)]">
               {avatarEmoji}
               {editing && <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center"><Edit2 size={20} className="text-white" /></div>}
             </button>
@@ -145,9 +145,9 @@ export function Profile() {
               <span>{localUser.xpTotal.toLocaleString()} XP</span>
               <span>Meta: {leagueInfo.nextXP.toLocaleString()} XP → {leagueInfo.next}</span>
             </div>
-            <div className="h-4 bg-[#1A2633] rounded-full border-2 border-[#2B3B4C] overflow-hidden">
+            <div className="h-4 bg-[#0F1C29] rounded-full border-2 border-[#1A2B3C] overflow-hidden">
               <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                className="h-full bg-(--color-secondary) rounded-full" />
+                className="h-full bg-gradient-to-r from-(--color-secondary) to-(--color-primary) rounded-full shadow-[0_0_8px_rgba(255,184,0,0.5)]" />
             </div>
           </div>
         )}
@@ -156,13 +156,13 @@ export function Profile() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4">
         {[
-          { icon: <Star size={28} className="text-(--color-secondary)" />, label: 'XP Total', value: localUser.xpTotal.toLocaleString() },
-          { icon: <Trophy size={28} className="text-yellow-400" />, label: 'Nível', value: localUser.level },
-          { icon: <Flame size={28} className="text-orange-400" />, label: 'Sequência', value: `${localUser.streakCount} dias` },
-          { icon: <Calendar size={28} className="text-(--color-primary)" />, label: 'Membro desde', value: joinDate },
+          { icon: <Star size={28} className="text-(--color-secondary)" />, label: 'XP Total', value: localUser.xpTotal.toLocaleString(), tile: 'bg-gradient-to-br from-yellow-900/40 to-amber-900/20 border-yellow-700/40 shadow-[0_0_16px_rgba(255,184,0,0.15)]' },
+          { icon: <Trophy size={28} className="text-yellow-400" />, label: 'Nível', value: localUser.level, tile: 'bg-gradient-to-br from-purple-900/40 to-indigo-900/20 border-purple-700/40 shadow-[0_0_16px_rgba(168,85,247,0.15)]' },
+          { icon: <Flame size={28} className="text-orange-400" />, label: 'Sequência', value: `${localUser.streakCount} dias`, tile: 'bg-gradient-to-br from-orange-900/40 to-red-900/20 border-orange-700/40 shadow-[0_0_16px_rgba(249,115,22,0.15)]' },
+          { icon: <Calendar size={28} className="text-(--color-primary)" />, label: 'Membro desde', value: joinDate, tile: 'bg-gradient-to-br from-green-900/40 to-teal-900/20 border-green-700/40 shadow-[0_0_16px_rgba(0,214,100,0.15)]' },
         ].map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}
-            className="bg-(--color-card) border-2 border-(--color-border) rounded-2xl p-6 flex flex-col items-center text-center gap-2">
+            className={`border-2 rounded-2xl p-6 flex flex-col items-center text-center gap-2 ${stat.tile}`}>
             {stat.icon}
             <p className="text-2xl font-black text-white">{stat.value}</p>
             <p className="text-gray-400 font-bold text-sm">{stat.label}</p>

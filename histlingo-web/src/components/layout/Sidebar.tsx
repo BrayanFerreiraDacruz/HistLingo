@@ -15,8 +15,8 @@ function NavItem({ href, icon: Icon, label }: { href: string; icon: any; label: 
     <Link href={href} className={`
       flex items-center gap-3 w-full py-3 px-4 rounded-2xl font-black text-sm tracking-widest uppercase transition-all border-2
       ${isActive
-        ? 'bg-(--color-primary)/15 text-(--color-primary) border-(--color-primary)/30'
-        : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white'}
+        ? 'bg-(--color-primary)/15 text-(--color-primary) border-(--color-primary)/40 shadow-[0_0_16px_rgba(0,214,100,0.2),inset_0_0_12px_rgba(0,214,100,0.05)]'
+        : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white hover:border-white/10'}
     `}>
       <Icon size={24} strokeWidth={2.5} className="shrink-0" />
       <span className="hidden lg:block">{label}</span>
@@ -30,11 +30,12 @@ export function Sidebar() {
   return (
     <nav className="
       fixed bottom-0 left-0 right-0 z-50
-      bg-(--color-background) border-t-2 border-(--color-border)
+      bg-(--color-background)/95 backdrop-blur-md border-t-2 border-(--color-border)
       flex items-center justify-around px-2 py-2
       lg:sticky lg:top-0 lg:bottom-auto lg:left-auto lg:right-auto lg:z-auto
       lg:w-64 lg:h-screen lg:flex-col lg:justify-between lg:items-stretch
       lg:border-t-0 lg:border-r-2 lg:px-4 lg:py-6 lg:shrink-0
+      lg:bg-[#060A10]/95
     ">
       {/* Logo (desktop only) */}
       <div className="hidden lg:flex items-center gap-3 px-4 mb-6 shrink-0">
@@ -51,7 +52,7 @@ export function Sidebar() {
       <div className="hidden lg:flex flex-col gap-3 shrink-0">
         {/* User info */}
         {user && (
-          <div className="flex items-center gap-3 px-4 py-3 bg-(--color-card) rounded-2xl border-2 border-(--color-border)">
+          <div className="flex items-center gap-3 px-4 py-3 bg-(--color-card) rounded-2xl border-2 border-(--color-primary)/20 shadow-[0_0_12px_rgba(0,214,100,0.08)]">
             <span className="text-2xl shrink-0">{user.avatarEmoji}</span>
             <div className="flex-1 min-w-0">
               <p className="font-black text-white text-sm truncate">{user.username}</p>

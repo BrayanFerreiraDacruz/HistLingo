@@ -17,7 +17,7 @@ const FLOATING_ICONS = [
   { emoji: '🏛️', x: '92%', y: '46%', delay: 0.8, dur: 6.5 },
 ]
 
-const inputCls = "w-full bg-[#0D1620] border-2 border-[#1A2633] px-5 py-4 rounded-2xl text-base font-bold text-white outline-none focus:border-(--color-primary) transition-colors placeholder:text-gray-600 shadow-inner"
+const inputCls = "w-full bg-[#070E18] border-2 border-[#1A2B3C] px-5 py-4 rounded-2xl text-base font-bold text-white outline-none focus:border-(--color-primary) focus:shadow-[0_0_0_3px_rgba(0,214,100,0.15)] transition-all placeholder:text-gray-600 shadow-inner"
 
 export function Auth() {
   const { login, register } = useAuth()
@@ -151,14 +151,15 @@ export function Auth() {
           <motion.div key={screen}
             initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
             transition={{ type: "spring", damping: 28, stiffness: 280 }}
-            className="w-full max-w-sm mx-auto px-5 relative">
+            className="w-full max-w-sm mx-auto px-4 relative">
+          <button onClick={() => { setScreen('landing'); reset() }}
+            className="absolute -top-10 left-1 p-2 rounded-full hover:bg-white/10 transition-colors z-10">
+            <X size={26} className="text-gray-400" strokeWidth={3} />
+          </button>
 
-            <button onClick={() => { setScreen('landing'); reset() }}
-              className="absolute top-0 left-3 p-2 rounded-full hover:bg-white/5 transition-colors">
-              <X size={26} className="text-gray-400" strokeWidth={3} />
-            </button>
+          <div className="glass border-2 border-white/8 rounded-[2rem] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.6)]">
 
-            <div className="mt-12 mb-7 text-center">
+            <div className="mb-7 text-center">
               <h2 className="text-3xl font-black text-white mb-1">
                 {screen === 'login' ? 'Bem-vindo de volta!' : 'Crie seu perfil'}
               </h2>
@@ -204,6 +205,7 @@ export function Auth() {
                 </button>
               )}
             </div>
+          </div>
           </motion.div>
         )}
 
@@ -212,11 +214,12 @@ export function Auth() {
           <motion.div key="forgot"
             initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", damping: 28 }}
-            className="w-full max-w-sm mx-auto px-5 relative">
-            <button onClick={() => { setScreen('login'); reset() }} className="absolute top-0 left-3 p-2 rounded-full hover:bg-white/5">
+            className="w-full max-w-sm mx-auto px-4 relative">
+            <button onClick={() => { setScreen('login'); reset() }} className="absolute -top-10 left-1 p-2 rounded-full hover:bg-white/10 z-10">
               <X size={26} className="text-gray-400" strokeWidth={3} />
             </button>
-            <div className="text-center mt-12 mb-7">
+            <div className="glass border-2 border-white/8 rounded-[2rem] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.6)]">
+            <div className="text-center mb-7">
               <div className="text-5xl mb-4">🔑</div>
               <h2 className="text-3xl font-black text-white mb-2">Recuperar senha</h2>
               <p className="text-gray-500 text-sm font-bold">Digite seu email e enviaremos as instruções.</p>
@@ -234,6 +237,7 @@ export function Auth() {
                 <button type="submit" disabled={loading} className="btn-base btn-primary w-full py-5 disabled:opacity-50">{loading ? 'ENVIANDO...' : 'ENVIAR INSTRUÇÕES'}</button>
               </form>
             )}
+            </div>
           </motion.div>
         )}
 
@@ -241,8 +245,9 @@ export function Auth() {
         {screen === 'reset' && (
           <motion.div key="reset"
             initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm mx-auto px-5">
-            <div className="text-center mb-7 mt-4">
+            className="w-full max-w-sm mx-auto px-4">
+            <div className="glass border-2 border-white/8 rounded-[2rem] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.6)]">
+            <div className="text-center mb-7">
               <div className="text-5xl mb-4">🔒</div>
               <h2 className="text-3xl font-black text-white mb-2">Nova senha</h2>
               <p className="text-gray-500 text-sm font-bold">Defina uma nova senha segura.</p>
@@ -261,6 +266,7 @@ export function Auth() {
                 <button type="submit" disabled={loading} className="btn-base btn-primary w-full py-5 disabled:opacity-50">{loading ? 'SALVANDO...' : 'SALVAR NOVA SENHA'}</button>
               </form>
             )}
+            </div>
           </motion.div>
         )}
 

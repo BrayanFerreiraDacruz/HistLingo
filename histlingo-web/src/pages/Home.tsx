@@ -7,12 +7,12 @@ import { useAuth } from "../lib/AuthContext"
 import { MapCharacter } from "../components/MapCharacter"
 
 const MODULE_ICONS: Record<number, string> = { 1: '🏹', 2: '⛵', 3: '👑', 4: '⚙️', 5: '✊' }
-const MODULE_COLORS: Record<number, { bg: string; border: string; shadow: string }> = {
-  1: { bg: 'bg-(--color-primary)', border: 'border-[#007F5F]', shadow: 'shadow-[0_4px_0_#007F5F]' },
-  2: { bg: 'bg-(--color-accent)', border: 'border-(--color-accent-dark)', shadow: 'shadow-neo-accent' },
-  3: { bg: 'bg-[#7C3AED]', border: 'border-[#5B21B6]', shadow: 'shadow-[0_4px_0_#5B21B6]' },
-  4: { bg: 'bg-[#DC2626]', border: 'border-[#991B1B]', shadow: 'shadow-[0_4px_0_#991B1B]' },
-  5: { bg: 'bg-[#D97706]', border: 'border-[#92400E]', shadow: 'shadow-[0_4px_0_#92400E]' },
+const MODULE_COLORS: Record<number, { bg: string; border: string; shadow: string; glow: string }> = {
+  1: { bg: 'bg-gradient-to-r from-[#00D664] to-[#00A84F]', border: 'border-[#00A84F]', shadow: 'shadow-[0_4px_0_#00843D]', glow: 'shadow-[0_8px_32px_rgba(0,214,100,0.35)]' },
+  2: { bg: 'bg-gradient-to-r from-[#4A8EFF] to-[#2B6EE8]', border: 'border-[#2B6EE8]', shadow: 'shadow-[0_4px_0_#1A55CC]', glow: 'shadow-[0_8px_32px_rgba(74,142,255,0.35)]' },
+  3: { bg: 'bg-gradient-to-r from-[#A855F7] to-[#7C3AED]', border: 'border-[#6D28D9]', shadow: 'shadow-[0_4px_0_#5B21B6]', glow: 'shadow-[0_8px_32px_rgba(168,85,247,0.35)]' },
+  4: { bg: 'bg-gradient-to-r from-[#EF4444] to-[#DC2626]', border: 'border-[#991B1B]', shadow: 'shadow-[0_4px_0_#7F1D1D]', glow: 'shadow-[0_8px_32px_rgba(239,68,68,0.35)]' },
+  5: { bg: 'bg-gradient-to-r from-[#FFB800] to-[#D97706]', border: 'border-[#B45309]', shadow: 'shadow-[0_4px_0_#92400E]', glow: 'shadow-[0_8px_32px_rgba(255,184,0,0.35)]' },
 }
 const SINUOUS = [0, -1, -2, -1, 0, 1, 2, 1, 0]
 
@@ -79,7 +79,7 @@ function PathNode({ status, position, label, href, isFirstActive, activeRef, mod
         }`}></div>
         <button className={`node-btn relative
           ${isCompleted ? 'bg-(--color-secondary) text-(--color-secondary-dark) border-white shadow-neo-secondary hover:brightness-110' : ''}
-          ${isActive ? 'bg-(--color-primary) text-white border-white shadow-neo-primary -rotate-45 hover:brightness-110 scale-110' : ''}
+          ${isActive ? 'bg-(--color-primary) text-white border-white shadow-neo-primary glow-primary -rotate-45 hover:brightness-110 scale-110' : ''}
           ${status === 'locked' ? 'bg-(--color-input) text-gray-500 border-gray-600 shadow-neo-card cursor-not-allowed' : ''}
         `}>
           {isCompleted && <Check size={34} strokeWidth={3.5} />}
@@ -147,8 +147,8 @@ export function Home() {
   return (
     <div className="flex flex-col gap-14 pb-24 w-full max-w-[480px] mx-auto relative pt-4">
       {/* Path line */}
-      <div className="absolute left-1/2 top-10 bottom-0 w-2.5 bg-[#1A2633] -translate-x-1/2 rounded-full -z-10"></div>
-      <div className="absolute left-1/2 top-10 h-[340px] w-2.5 bg-(--color-secondary) -translate-x-1/2 rounded-t-full -z-10 shadow-[0_0_12px_rgba(255,215,0,0.35)]"></div>
+      <div className="absolute left-1/2 top-10 bottom-0 w-2.5 bg-[#1A2B3C] -translate-x-1/2 rounded-full -z-10"></div>
+      <div className="absolute left-1/2 top-10 h-[340px] w-2.5 bg-gradient-to-b from-(--color-secondary) to-(--color-primary) -translate-x-1/2 rounded-t-full -z-10 shadow-[0_0_16px_rgba(255,184,0,0.4)]"></div>
 
       {modules.map((mod, modIdx) => {
         const colors = MODULE_COLORS[mod.order] || MODULE_COLORS[1]
@@ -162,7 +162,7 @@ export function Home() {
         return (
           <section key={mod.id} className="relative w-full z-10">
             {/* Module header */}
-            <div className={`${colors.bg} text-white p-6 rounded-[2rem] mb-8 ${colors.shadow} flex items-center justify-between overflow-hidden relative border-2 ${colors.border} ${!moduleUnlocked ? 'opacity-50' : ''}`}>
+            <div className={`${colors.bg} text-white p-6 rounded-[2rem] mb-8 ${colors.shadow} ${moduleUnlocked ? colors.glow : ''} flex items-center justify-between overflow-hidden relative border-2 ${colors.border} ${!moduleUnlocked ? 'opacity-40 grayscale' : ''}`}>
               <div className="z-10">
                 <h2 className="text-2xl md:text-3xl font-black mb-1 tracking-tight">Unidade {mod.order}</h2>
                 <p className="text-base md:text-lg font-bold opacity-90">{mod.title}</p>

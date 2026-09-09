@@ -296,7 +296,16 @@ function EntryCard({ entry }: { entry: WikiEntry }) {
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-(--color-card) border-2 border-(--color-border) rounded-3xl overflow-hidden hover:border-white/20 transition-colors">
+      className={`bg-(--color-card) border-2 border-(--color-border) rounded-3xl overflow-hidden hover:border-white/20 transition-all border-l-4 ${
+        entry.periodColor === 'emerald' ? 'border-l-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]' :
+        entry.periodColor === 'amber' ? 'border-l-amber-500 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]' :
+        entry.periodColor === 'purple' ? 'border-l-purple-500 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]' :
+        entry.periodColor === 'blue' ? 'border-l-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]' :
+        entry.periodColor === 'orange' ? 'border-l-orange-500 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)]' :
+        entry.periodColor === 'red' ? 'border-l-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.15)]' :
+        entry.periodColor === 'cyan' ? 'border-l-cyan-500 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]' :
+        'border-l-gray-500'
+      }`}>
 
       <button className="w-full text-left p-5 md:p-6" onClick={() => setExpanded(v => !v)}>
         <div className="flex items-start gap-4">
@@ -412,8 +421,8 @@ export function Wiki() {
           <button key={p} onClick={() => setActivePeriod(p)}
             className={`shrink-0 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
               activePeriod === p
-                ? 'bg-(--color-primary) text-white border-(--color-primary)'
-                : 'text-gray-400 border-(--color-border) hover:border-white/20'
+                ? 'bg-gradient-to-r from-(--color-primary) to-(--color-accent) text-white border-transparent shadow-[0_0_12px_rgba(0,214,100,0.3)]'
+                : 'text-gray-400 border-(--color-border) hover:border-white/20 hover:text-white'
             }`}>
             {p}
           </button>

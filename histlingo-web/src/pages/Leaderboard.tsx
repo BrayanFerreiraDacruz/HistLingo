@@ -4,12 +4,12 @@ import { Flame, Trophy } from "lucide-react"
 import { users, LeaderboardEntry } from "../lib/api"
 import { useAuth } from "../lib/AuthContext"
 
-const LEAGUE_COLORS: Record<string, { text: string; bg: string; icon: string }> = {
-  'Bronze':   { text: 'text-amber-700', bg: 'bg-amber-900/30', icon: '🥉' },
-  'Prata':    { text: 'text-gray-300', bg: 'bg-gray-700/30', icon: '🥈' },
-  'Ouro':     { text: 'text-yellow-400', bg: 'bg-yellow-900/30', icon: '🥇' },
-  'Diamante': { text: 'text-cyan-400', bg: 'bg-cyan-900/30', icon: '💎' },
-  'Mestre':   { text: 'text-purple-400', bg: 'bg-purple-900/30', icon: '👑' },
+const LEAGUE_COLORS: Record<string, { text: string; bg: string; icon: string; glow: string; gradient: string }> = {
+  'Bronze':   { text: 'text-amber-500', bg: 'bg-gradient-to-r from-amber-900/50 to-amber-800/30', icon: '🥉', glow: 'shadow-[0_0_24px_rgba(217,119,6,0.3)]', gradient: 'from-amber-900/60 to-amber-800/40' },
+  'Prata':    { text: 'text-gray-300', bg: 'bg-gradient-to-r from-gray-700/50 to-gray-600/30', icon: '🥈', glow: 'shadow-[0_0_24px_rgba(156,163,175,0.25)]', gradient: 'from-gray-700/60 to-gray-600/40' },
+  'Ouro':     { text: 'text-yellow-400', bg: 'bg-gradient-to-r from-yellow-900/50 to-yellow-800/30', icon: '🥇', glow: 'shadow-[0_0_24px_rgba(234,179,8,0.35)]', gradient: 'from-yellow-900/60 to-yellow-800/40' },
+  'Diamante': { text: 'text-cyan-400', bg: 'bg-gradient-to-r from-cyan-900/50 to-cyan-800/30', icon: '💎', glow: 'shadow-[0_0_24px_rgba(34,211,238,0.35)]', gradient: 'from-cyan-900/60 to-cyan-800/40' },
+  'Mestre':   { text: 'text-purple-400', bg: 'bg-gradient-to-r from-purple-900/50 to-purple-800/30', icon: '👑', glow: 'shadow-[0_0_24px_rgba(168,85,247,0.4)]', gradient: 'from-purple-900/60 to-purple-800/40' },
 }
 
 const RANK_COLORS = ['text-yellow-400', 'text-gray-300', 'text-amber-600']
@@ -37,7 +37,7 @@ export function Leaderboard() {
     <div className="flex flex-col w-full max-w-[600px] mx-auto pb-24">
       {/* League Banner */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className={`${league.bg} border-2 border-current ${league.text} rounded-[2rem] p-6 mb-8 flex items-center gap-6`}>
+        className={`${league.bg} border-2 border-current ${league.text} ${league.glow} rounded-[2rem] p-6 mb-8 flex items-center gap-6`}>
         <span className="text-6xl">{league.icon}</span>
         <div>
           <p className="text-sm font-black uppercase tracking-widest opacity-70 mb-1">Sua liga atual</p>
@@ -68,8 +68,8 @@ export function Leaderboard() {
                 <p className="text-white font-black text-sm mb-2 truncate max-w-[80px] text-center">{e.username}</p>
                 <p className="text-(--color-secondary) font-black text-sm mb-1">{e.xpTotal.toLocaleString()} XP</p>
                 <div className={`w-full ${podiumH[idx]} rounded-t-2xl flex items-start justify-center pt-2 border-t-4 ${
-                  idx === 0 ? 'bg-yellow-900/40 border-yellow-400' :
-                  idx === 1 ? 'bg-gray-700/40 border-gray-400' : 'bg-amber-900/40 border-amber-600'
+                  idx === 0 ? 'bg-gradient-to-b from-yellow-800/50 to-yellow-900/20 border-yellow-400 shadow-[0_0_16px_rgba(234,179,8,0.3)]' :
+                  idx === 1 ? 'bg-gradient-to-b from-gray-600/50 to-gray-700/20 border-gray-400 shadow-[0_0_12px_rgba(156,163,175,0.2)]' : 'bg-gradient-to-b from-amber-700/50 to-amber-900/20 border-amber-500 shadow-[0_0_12px_rgba(217,119,6,0.25)]'
                 }`}>
                   <span className="text-2xl font-black">{['🥇','🥈','🥉'][idx]}</span>
                 </div>

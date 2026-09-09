@@ -3,31 +3,31 @@
 @theme {
   --font-sans: "Nunito", "Segoe UI", system-ui, sans-serif;
 
-  /* Neo-Brasil Modern Dark Palette */
-  --color-background: #0A1118;
-  --color-foreground: #F8F9FA;
+  /* HistLingo Premium Dark Palette */
+  --color-background: #070B11;
+  --color-foreground: #F0F4FA;
 
-  --color-primary: #00A651; /* Vibrant Flag Green */
-  --color-primary-dark: #00823F;
+  --color-primary: #00D664;
+  --color-primary-dark: #00A84F;
   --color-primary-foreground: #FFFFFF;
 
-  --color-secondary: #FFD700; /* Vibrant Gold */
-  --color-secondary-dark: #D4B200;
+  --color-secondary: #FFB800;
+  --color-secondary-dark: #CC9200;
   --color-secondary-foreground: #1A1A1A;
 
-  --color-accent: #003566; /* Deep Blue */
-  --color-accent-dark: #002244;
+  --color-accent: #4A8EFF;
+  --color-accent-dark: #2B6EE8;
   --color-accent-foreground: #FFFFFF;
 
   --color-destructive: #FF4B4B;
   --color-destructive-dark: #EA2B2B;
   --color-destructive-foreground: #FFFFFF;
 
-  --color-card: #141E28;
-  --color-card-foreground: #F8F9FA;
+  --color-card: #0F1923;
+  --color-card-foreground: #F0F4FA;
 
-  --color-border: #1F2F3F;
-  --color-input: #1F2F3F;
+  --color-border: #1A2B3C;
+  --color-input: #1A2B3C;
 
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
@@ -49,13 +49,21 @@
   }
 }
 
-/* Custom Duolingo-style shadow utilities */
+/* Custom shadow + glow utilities */
 @layer utilities {
   .shadow-neo-primary { box-shadow: 0 4px 0 0 var(--color-primary-dark); }
   .shadow-neo-secondary { box-shadow: 0 4px 0 0 var(--color-secondary-dark); }
   .shadow-neo-accent { box-shadow: 0 4px 0 0 var(--color-accent-dark); }
   .shadow-neo-destructive { box-shadow: 0 4px 0 0 var(--color-destructive-dark); }
   .shadow-neo-card { box-shadow: 0 6px 0 0 rgba(0, 0, 0, 0.5); }
+  .glow-primary { box-shadow: 0 0 20px rgba(0, 214, 100, 0.4), 0 0 40px rgba(0, 214, 100, 0.15); }
+  .glow-secondary { box-shadow: 0 0 20px rgba(255, 184, 0, 0.4), 0 0 40px rgba(255, 184, 0, 0.15); }
+  .glow-accent { box-shadow: 0 0 20px rgba(74, 142, 255, 0.4), 0 0 40px rgba(74, 142, 255, 0.15); }
+  .glow-primary-sm { box-shadow: 0 0 12px rgba(0, 214, 100, 0.35); }
+  .glow-secondary-sm { box-shadow: 0 0 12px rgba(255, 184, 0, 0.35); }
+  .glow-accent-sm { box-shadow: 0 0 12px rgba(74, 142, 255, 0.35); }
+  .glass { background: rgba(15, 25, 35, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .glass-light { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
 }

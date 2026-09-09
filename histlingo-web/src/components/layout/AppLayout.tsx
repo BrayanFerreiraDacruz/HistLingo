@@ -24,7 +24,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex flex-1 flex-col min-w-0">
 
         {/* Top header — always visible on all screen sizes */}
-        <header className="sticky top-0 z-40 bg-(--color-background)/95 backdrop-blur-md border-b-2 border-(--color-border) flex items-center justify-between px-4 lg:px-8 h-14 shrink-0">
+        <header className="sticky top-0 z-40 bg-[#060A10]/95 backdrop-blur-lg border-b-2 border-(--color-border) shadow-[0_2px_20px_rgba(0,0,0,0.4)] flex items-center justify-between px-4 lg:px-8 h-14 shrink-0">
           {/* Mobile: app logo. Desktop: page title (sidebar already has the logo) */}
           <span className="text-xl font-black text-(--color-primary) tracking-tighter select-none lg:hidden">
             HistLingo

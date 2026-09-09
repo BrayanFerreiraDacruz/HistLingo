@@ -253,10 +253,10 @@ export function Quiz() {
         <button onClick={() => setLocation('/')} className="p-2 rounded-full hover:bg-white/5 transition-colors">
           <X size={28} className="text-gray-500" strokeWidth={3} />
         </button>
-        <div className="flex-1 h-4 bg-[#1A2633] rounded-full overflow-hidden border-2 border-[#2B3B4C]">
+        <div className="flex-1 h-4 bg-[#0F1C29] rounded-full overflow-hidden border-2 border-[#1A2B3C]">
           <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-            className="h-full bg-(--color-primary) rounded-full">
-            <div className="h-1 mt-1 mx-1 bg-white/25 rounded-full"></div>
+            className="h-full bg-gradient-to-r from-(--color-primary) to-(--color-accent) rounded-full shadow-[0_0_8px_rgba(0,214,100,0.5)]">
+            <div className="h-1 mt-1 mx-1 bg-white/30 rounded-full"></div>
           </motion.div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -323,13 +323,13 @@ export function Quiz() {
                   <div className="grid grid-cols-1 gap-3 w-full">
                     {block.options.map((opt, i) => {
                       const isSelected = selectedOption === opt
-                      let cls = 'bg-(--color-card) border-(--color-border) text-white hover:bg-white/5'
+                      let cls = 'bg-(--color-card) border-(--color-border) text-white hover:bg-white/5 hover:border-white/20 hover:shadow-[0_0_12px_rgba(74,142,255,0.15)]'
                       if (isChecking && isSelected)
-                        cls = isCorrect ? 'bg-(--color-primary)/20 border-(--color-primary) text-(--color-primary)' : 'bg-(--color-destructive)/20 border-(--color-destructive) text-(--color-destructive)'
+                        cls = isCorrect ? 'bg-(--color-primary)/20 border-(--color-primary) text-(--color-primary) shadow-[0_0_16px_rgba(0,214,100,0.3)]' : 'bg-(--color-destructive)/20 border-(--color-destructive) text-(--color-destructive)'
                       else if (isChecking && opt === block.correctAnswer)
-                        cls = 'border-(--color-primary) bg-(--color-background) text-(--color-primary)'
+                        cls = 'border-(--color-primary) bg-(--color-primary)/10 text-(--color-primary) shadow-[0_0_16px_rgba(0,214,100,0.25)]'
                       else if (isSelected && !isChecking)
-                        cls = 'bg-(--color-accent)/20 border-(--color-accent) text-(--color-accent-foreground)'
+                        cls = 'bg-(--color-accent)/20 border-(--color-accent) text-white shadow-[0_0_16px_rgba(74,142,255,0.3)]'
                       return (
                         <button key={i} disabled={isChecking} onClick={() => handleSelect(opt)}
                           className={`group p-4 md:p-5 rounded-2xl text-left text-sm md:text-base font-black border-2 transition-all duration-150 outline-none active:translate-y-0.5 ${cls}`}>
