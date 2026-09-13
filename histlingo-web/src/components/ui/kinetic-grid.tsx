@@ -299,7 +299,11 @@ export default function KineticGrid({
         ref={canvasRef}
         className="fixed inset-0 w-full h-full z-0 pointer-events-none"
       />
-      <div className="relative z-10 w-full h-full">{children}</div>
+      <div className="absolute inset-0 z-10 overflow-y-auto no-scrollbar">
+        <div className="min-h-full w-full flex items-center justify-center px-4 py-10">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

@@ -80,7 +80,7 @@ export function Auth() {
   }
 
   return (
-    <KineticGrid className="fixed inset-0 z-50 flex items-center justify-center">
+    <KineticGrid className="fixed inset-0 z-50">
 
       {/* Floating background icons — landing only */}
       {screen === 'landing' && FLOATING_ICONS.map((item, i) => (
